@@ -1,6 +1,6 @@
 [versions]
 activityKtxVersion = "1.8.0"
-agp = "8.6.0"
+agp = "8.12.2"
 appcompat = "1.7.1"
 fragmentKtx = "1.8.9"
 kotlin = "1.9.0"
