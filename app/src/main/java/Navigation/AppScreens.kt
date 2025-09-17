@@ -13,5 +13,7 @@ enum class AppScreens{
     ProfileScreen,
     UpdateAccountScreen,
     ChatScreen,
-    RiskZones
+    RiskZones,
+
+    HomeSupervisorScreen
 }

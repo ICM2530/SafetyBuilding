@@ -16,6 +16,7 @@ import com.example.main.Screens.HomeScreen
 import com.example.main.Screens.RecoverPassword.ChangePassWordScreen
 import com.example.main.Screens.RecoverPassword.CodeVerificationScreen
 import com.example.main.Screens.RecoverPassword.EmailVerificationScreen
+import com.example.main.Screens.supervisor.HomeSupervisorScreen
 
 @Composable
 fun AppNavigation(){
@@ -60,6 +61,10 @@ fun AppNavigation(){
         composable(route = AppScreens.RiskZones.name){
             RiskZones(navController)
         }
+        composable(route = AppScreens.HomeSupervisorScreen.name) {
+            HomeSupervisorScreen()
+        }
+
     }
 }
 

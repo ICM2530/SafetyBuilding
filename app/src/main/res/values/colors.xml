@@ -7,4 +7,13 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Colores supervisor -->
+    <color name="android_blue">#0095FF</color>
+    <color name="popup_bg">#C8DFEF</color>
+    <color name="sup_bg_top">#0F0E0E</color>
+    <color name="sup_bg_bottom">#1B1716</color>
+    <color name="sup_card_bg">#661F1A19</color>
+    <color name="sup_text_primary">#EDECEC</color>
+    <color name="sup_text_secondary">#BDB7B4</color>
 </resources>
