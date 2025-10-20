@@ -1,23 +1,19 @@
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
+        google()
         mavenCentral()
         gradlePluginPortal()
     }
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    // Permite repos en el módulo si hace falta (útil para aislar el problema)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
+        // redundante pero a veces ayuda en redes corporativas:
+        maven { url = uri("https://maven.google.com") }
     }
 }
-
-rootProject.name = "Practica"
+rootProject.name = "SafetyFirst"
 include(":app")
