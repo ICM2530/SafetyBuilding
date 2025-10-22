@@ -42,7 +42,7 @@ fun PantZonas(nav: NavController, repo: FirebaseRepositorio = FirebaseRepositori
                     ZonaRiesgo(
                         id = id, titulo = titulo, descripcion = descripcion,
                         lat = lat.toDoubleOrNull() ?: 0.0, lon = lon.toDoubleOrNull() ?: 0.0,
-                        radioMetros = radio.toDoubleOrNull() ?: 20.0
+                        radioMetros = radio.toDoubleOrNull() ?: 20.0, altitud = 0.0
                     )
                 )
                 titulo = ""; descripcion = ""; lat = "0.0"; lon = "0.0"; radio = "20.0"

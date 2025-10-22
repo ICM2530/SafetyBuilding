@@ -47,7 +47,8 @@ data class ZonaRiesgo(
     val radioMetros: Double = 20.0,
     val creadorUid: String = "",
     val tipos: List<String> = emptyList(),
-    val fotoUrl: String = ""
+    val fotoUrl: String = "",
+    val altitud: Double = 0.0
 )
 
 data class Mensaje(

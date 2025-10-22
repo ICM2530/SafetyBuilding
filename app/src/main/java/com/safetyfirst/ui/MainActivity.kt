@@ -31,6 +31,9 @@ fun AppRaiz() {
         // Riesgos
         composable(Rutas.Zonas.ruta) { PantRiesgoFormulario(nav) }
         composable(Rutas.RiesgosLista.ruta) { PantRiesgosListaSupervisor(nav) }
+        composable(Rutas.RiesgoDetalle.ruta + "/{zonaId}") { back ->
+            PantRiesgoDetalle(nav, back.arguments?.getString("zonaId").orEmpty())
+        }
 
         // Operadores
         composable(Rutas.Operadores.ruta) { PantOperadoresLista(nav) }
@@ -59,6 +62,7 @@ object Rutas {
 
     val Zonas = Ruta("zonas_form")
     val RiesgosLista = Ruta("riesgos_lista")
+    val RiesgoDetalle = Ruta("riesgo_detalle")
 
     val Operadores = Ruta("operadores")
     val OperadorPerfil = Ruta("operador_perfil")

@@ -78,7 +78,14 @@ class FirebaseRepositorio {
             override fun onDataChange(s: com.google.firebase.database.DataSnapshot) {
                 trySend(s.children.mapNotNull { it.getValue(Usuario::class.java) })
             }
-            override fun onCancelled(e: com.google.firebase.database.DatabaseError) { close(e.toException()) }
+            override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
+                if (e.code == DatabaseError.PERMISSION_DENIED) {
+                    trySend(emptyList())
+                    close()
+                } else {
+                    close(e.toException())
+                }
+            }
         }
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
     }
@@ -109,7 +116,14 @@ class FirebaseRepositorio {
             override fun onDataChange(s: com.google.firebase.database.DataSnapshot) {
                 trySend(s.children.mapNotNull { it.getValue(ZonaRiesgo::class.java) })
             }
-            override fun onCancelled(e: com.google.firebase.database.DatabaseError) { close(e.toException()) }
+            override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
+                if (e.code == DatabaseError.PERMISSION_DENIED) {
+                    trySend(emptyList())
+                    close()
+                } else {
+                    close(e.toException())
+                }
+            }
         }
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
     }
@@ -117,6 +131,9 @@ class FirebaseRepositorio {
     suspend fun agregarZona(z: ZonaRiesgo) {
         db.child(R_ZONAS).child(z.id).setValue(z).await()
     }
+
+    suspend fun obtenerZona(id: String): ZonaRiesgo? =
+        db.child(R_ZONAS).child(id).get().await().getValue(ZonaRiesgo::class.java)
 
     // —— Posiciones (última por usuario para mapa)
     fun flujoUltimaPosicionTodos(): Flow<FirebaseResultado<Map<String, Posicion>>> = callbackFlow {
