@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.main.CompReusable.ReusableButton
 import com.example.main.utils.theme.Blue
-import com.example.practica.R
+import com.safetyfirst.R
 
 @Composable
 fun LogInScreen (controller: NavController){

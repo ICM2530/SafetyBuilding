@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.messaging.FirebaseMessaging
 import com.safetyfirst.modelo.*
+import com.google.firebase.database.DatabaseError
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -12,6 +13,13 @@ import kotlinx.coroutines.tasks.await
 // ────────────────────────
 // Acceso a Firebase Auth + RTDB
 // ────────────────────────
+
+sealed class FirebaseResultado<out T> {
+    object Cargando : FirebaseResultado<Nothing>()
+    data class Exito<T>(val datos: T) : FirebaseResultado<T>()
+    data class Error(val mensaje: String, val causa: Throwable? = null) : FirebaseResultado<Nothing>()
+}
+
 class FirebaseRepositorio {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseDatabase.getInstance().reference
@@ -75,14 +83,21 @@ class FirebaseRepositorio {
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
     }
 
-    fun flujoUsuariosPorRol(rol: Rol): Flow<List<Usuario>> = callbackFlow {
+    fun flujoUsuariosPorRol(rol: Rol): Flow<FirebaseResultado<List<Usuario>>> = callbackFlow {
         val ref = db.child(R_USUARIOS)
         val l = object: com.google.firebase.database.ValueEventListener {
             override fun onDataChange(s: com.google.firebase.database.DataSnapshot) {
                 val lista = s.children.mapNotNull { it.getValue(Usuario::class.java) }.filter { it.rol == rol }
-                trySend(lista)
+                trySend(FirebaseResultado.Exito(lista))
             }
-            override fun onCancelled(e: com.google.firebase.database.DatabaseError) { close(e.toException()) }
+            override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
+                if (e.code == DatabaseError.PERMISSION_DENIED) {
+                    trySend(FirebaseResultado.Error("No tienes permisos para ver los usuarios.", e.toException()))
+                    close() // cerramos sin propagar excepción para no crashear la UI
+                } else {
+                    close(e.toException())
+                }
+            }
         }
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
     }
@@ -104,7 +119,7 @@ class FirebaseRepositorio {
     }
 
     // —— Posiciones (última por usuario para mapa)
-    fun flujoUltimaPosicionTodos(): Flow<Map<String, Posicion>> = callbackFlow {
+    fun flujoUltimaPosicionTodos(): Flow<FirebaseResultado<Map<String, Posicion>>> = callbackFlow {
         val ref = db.child(R_POSICIONES)
         val l = object: com.google.firebase.database.ValueEventListener {
             override fun onDataChange(s: com.google.firebase.database.DataSnapshot) {
@@ -113,9 +128,16 @@ class FirebaseRepositorio {
                     val ultima = uidNode.children.maxByOrNull { it.child("tiempo").getValue(Long::class.java) ?: 0L }
                     ultima?.getValue(Posicion::class.java)?.let { mapa[uidNode.key!!] = it }
                 }
-                trySend(mapa)
+                trySend(FirebaseResultado.Exito(mapa))
             }
-            override fun onCancelled(e: com.google.firebase.database.DatabaseError) { close(e.toException()) }
+            override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
+                if (e.code == DatabaseError.PERMISSION_DENIED) {
+                    trySend(FirebaseResultado.Error("No tienes permisos para ver las posiciones.", e.toException()))
+                    close()
+                } else {
+                    close(e.toException())
+                }
+            }
         }
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
     }
