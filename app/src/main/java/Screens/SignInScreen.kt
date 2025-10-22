@@ -1,41 +1,33 @@
 package Screens
 
 import Navigation.AppScreens
-import android.graphics.drawable.Icon
-import android.net.Uri
-import android.util.Log
-import android.widget.Space
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,23 +36,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.main.CompReusable.ReusableButton
 import com.example.main.CompReusable.ReusableTextField
 import com.example.main.CompReusable.ReusableTopAppBar
-import com.example.main.utils.theme.Blue
-import com.example.main.utils.theme.Red
+import com.example.main.utils.theme.SafetyGreenPrimary
+import com.example.main.utils.theme.SafetyNeutralLight
+import com.example.main.utils.theme.SafetySurfaceAlt
+import com.example.main.utils.theme.SafetyTextPrimary
+import com.example.main.utils.theme.SafetyTextSecondary
 import com.example.main.utils.theme.White
-// import kotlinx.serialization.descriptors.StructureKind
-import java.lang.invoke.TypeDescriptor
 
 @Composable
-fun SignInScreen( controller: NavController){
+fun SignInScreen(controller: NavController) {
 
     var nombre by remember { mutableStateOf("") }
     var apellidos by remember { mutableStateOf("") }
@@ -68,177 +61,222 @@ fun SignInScreen( controller: NavController){
     var email by remember { mutableStateOf("") }
     var celular by remember { mutableStateOf("") }
     var usuario by remember { mutableStateOf("") }
-    var contraseña by remember { mutableStateOf("") }
-    var confirmacionContraseña by remember { mutableStateOf("") }
-    var tipoDoc by remember { mutableStateOf(false) }
-    val opciones = listOf("C.c", "Pasaporte")
-    var seleccionado by remember { mutableStateOf(opciones[0]) }
-    var image by remember { mutableStateOf<Uri?>(null) }
+    var contrasena by remember { mutableStateOf("") }
+    var confirmacionContrasena by remember { mutableStateOf("") }
+    val opciones = listOf("C.C.", "Pasaporte", "C.E.")
+    var tipoDoc by remember { mutableStateOf(opciones.first()) }
+    var expanded by remember { mutableStateOf(false) }
 
-
-
-    Scaffold (
-        topBar = { ReusableTopAppBar(
-            modifier = Modifier
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colorStops = arrayOf(
-                            0.1f to Red,
-                            0.3f to Blue
-                        )
-                    )
-                )
-                .fillMaxWidth(),
-            icon = Icons.Default.ArrowBack,
-            contentDescription = "Volver a inicio de sesión",
-            onClick = {controller.navigate(AppScreens.LogInScreen.name)},
-            title = "Registro de nuevo usuario"
-        ) }
-    ){ innerPaddig ->
-        Column (
-            modifier = Modifier
-                .padding(innerPaddig)
-                .padding(horizontal = 22.dp, vertical = 20.dp)
-                ,
-            horizontalAlignment = Alignment.CenterHorizontally
-
-        ) {
-            ReusableTextField(
-                contenido = "Nombre",
-                value = nombre,
-                onValueChange = {nombre = it}
-
-            )
-            ReusableTextField(
-                contenido = "Nombre",
-                value = apellidos,
-                onValueChange = {apellidos = it}
-
-            )
-            Spacer(Modifier.height(10.dp))
-            Row (
-                verticalAlignment = Alignment.CenterVertically,
-            ){
-                Box(
-                    
-
-                    modifier = Modifier
-                        .clickable { tipoDoc = true }
-                        .border(
-                            width = 1.dp, // grosor
-                            color = Color.Black, // color del borde
-                            shape = RoundedCornerShape(6.dp) // forma opcional
-                        )
-                        .height(56.dp)
-
-                ){
-
-                    Text(seleccionado, modifier = Modifier.padding(20.dp))
-                    DropdownMenu(
-                        modifier = Modifier.clip(
-                            RoundedCornerShape(6.dp)
-                        ),
-
-                        expanded = tipoDoc,
-                        onDismissRequest = {tipoDoc = false}
-                    ) {
-                        opciones.forEach{
-                                opciones-> DropdownMenuItem(
-                            text = { Text(opciones) },
-                            onClick = {
-                                seleccionado = opciones
-                                tipoDoc = false
-                            }
-                        )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.width(10.dp))
-                ReusableTextField(
-                    contenido = "Cédula",
-                    value = cedula,
-                    onValueChange = {cedula = it}
-
-                )
-
-            }
-
-            ReusableTextField(
-                contenido = "Cooreo electronico",
-                value = email,
-                onValueChange = {email = it}
-
-            )
-            ReusableTextField(
-                contenido = "Celular",
-                value = celular,
-                onValueChange = {celular = it}
-
-            )
-            ReusableTextField(
-                contenido = "Usuario",
-                value = usuario,
-                onValueChange = {usuario = it}
-
-            )
-            ReusableTextField(
-                contenido = "Contraseña",
-                value = contraseña,
-                onValueChange = {contraseña = it}
-
-            )
-        ReusableTextField(
-            contenido = "Confirmar contraseña",
-            value = confirmacionContraseña,
-            onValueChange = {confirmacionContraseña = it}
-
-        )
-            Spacer(Modifier.height(20.dp))
-            Box(
-               modifier =  Modifier.border(
-                    width = 1.dp,
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color.Black,
-                )
-            ){
-                Column (
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ){
-                    if(image!= null){
-                        //imagen perfil-Escogida desde galeria
-                    }
-                    else {
-                        Text("Foto de perfil", Modifier.padding(3.dp))
-                        IconButton(
-                            onClick = {
-
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Person,
-                                contentDescription = "Tomarse una foto de perfil"
-                            )
-
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(40.dp))
-            ReusableButton(
-                label = "Registrarme",
-                onClick = {
-                    controller.navigate(AppScreens.RiskCodeScreen.name)
-                }
-
+    Scaffold(
+        containerColor = White,
+        topBar = {
+            ReusableTopAppBar(
+                title = "Crear cuenta",
+                leadingIcon = Icons.AutoMirrored.Outlined.ArrowBack,
+                onLeadingClick = {
+                    controller.popBackStack()
+                },
+                trailingIcon = null,
+                showDivider = true
             )
         }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .background(White)
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
 
+            Text(
+                text = "Completa tus datos para que podamos identificarte en el sitio de trabajo.",
+                style = TextStyle(
+                    color = SafetyTextSecondary,
+                    fontSize = 15.sp
+                )
+            )
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SafetySurfaceAlt),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    SectionTitle("Datos personales")
+
+                    ReusableTextField(
+                        contenido = "Nombre(s)",
+                        value = nombre,
+                        onValueChange = { nombre = it }
+                    )
+
+                    ReusableTextField(
+                        contenido = "Apellido(s)",
+                        value = apellidos,
+                        onValueChange = { apellidos = it }
+                    )
+
+                    Box {
+                        ReusableTextField(
+                            contenido = "Tipo de documento",
+                            value = tipoDoc,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowDropDown,
+                                    contentDescription = null,
+                                    tint = SafetyGreenPrimary
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { expanded = !expanded }
+                        )
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            opciones.forEach { opcion ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = opcion,
+                                            style = TextStyle(color = SafetyTextPrimary)
+                                        )
+                                    },
+                                    onClick = {
+                                        tipoDoc = opcion
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    ReusableTextField(
+                        contenido = "Número de documento",
+                        value = cedula,
+                        onValueChange = { cedula = it }
+                    )
+
+                    ReusableTextField(
+                        contenido = "Correo electrónico",
+                        value = email,
+                        onValueChange = { email = it }
+                    )
+
+                    ReusableTextField(
+                        contenido = "Número de contacto",
+                        value = celular,
+                        onValueChange = { celular = it }
+                    )
+
+                    SectionTitle("Acceso a la plataforma")
+
+                    ReusableTextField(
+                        contenido = "Usuario",
+                        value = usuario,
+                        onValueChange = { usuario = it }
+                    )
+
+                    ReusableTextField(
+                        contenido = "Contraseña",
+                        value = contrasena,
+                        onValueChange = { contrasena = it }
+                    )
+
+                    ReusableTextField(
+                        contenido = "Confirmar contraseña",
+                        value = confirmacionContrasena,
+                        onValueChange = { confirmacionContrasena = it }
+                    )
+                }
+            }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SafetySurfaceAlt),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    SectionTitle("Foto de perfil")
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(SafetyNeutralLight)
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Person,
+                                contentDescription = null,
+                                tint = SafetyGreenPrimary,
+                                modifier = Modifier.size(56.dp)
+                            )
+                            Text(
+                                text = "Agrega una foto para que te identifiquen en campo.",
+                                style = TextStyle(
+                                    color = SafetyTextSecondary,
+                                    fontSize = 14.sp
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                            IconButton(onClick = { /* TODO: implementar carga */ }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CameraAlt,
+                                    contentDescription = "Agregar foto",
+                                    tint = SafetyGreenPrimary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            ReusableButton(
+                label = "Finalizar registro",
+                onClick = {
+                    controller.navigate(AppScreens.RiskCodeScreen.name)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp)
+            )
+        }
     }
-
 }
 
-
-
-
-
+@Composable
+private fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = TextStyle(
+            color = SafetyTextPrimary,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    )
+}

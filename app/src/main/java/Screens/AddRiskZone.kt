@@ -1,197 +1,301 @@
 package com.example.main.Screens
 
 import Navigation.AppScreens
-import androidx.compose.foundation.BorderStroke
+import Navigation.BottomDestination
+import Navigation.buildBottomItems
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarColors
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.main.CompReusable.ReusableButton
 import com.example.main.CompReusable.ReusableTextField
 import com.example.main.CompReusable.ReusableTopAppBar
+import com.example.main.CompReusable.SafetyBottomBar
+import com.example.main.utils.theme.SafetyGreenPrimary
+import com.example.main.utils.theme.SafetyNeutralLight
+import com.example.main.utils.theme.SafetySurface
+import com.example.main.utils.theme.SafetySurfaceAlt
+import com.example.main.utils.theme.SafetyTextPrimary
+import com.example.main.utils.theme.SafetyTextSecondary
+import com.example.main.utils.theme.White
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material3.Surface
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AddRiskZone(navController: NavController){
-
-    var nombre by remember { mutableStateOf("") }
+fun AddRiskZone(navController: NavController) {
+    var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
-    var ubicacion by remember { mutableStateOf("") } // seguramente esto cambie
+    var latitud by remember { mutableStateOf("") }
+    var longitud by remember { mutableStateOf("") }
+    var altitud by remember { mutableStateOf("") }
 
-    var tipoRiesgoList = listOf(
-        "Caidas de altura",
-        "Golpes por objetos (movimiento/caida)",
-        "Atrapamiento (maquinaria/excavacion/estructuras)",
-        "Sobreesfuerzo (cargar peso)",
-        "Ruido excesivo",
+    val riskOptions = listOf(
+        "Caída de altura",
+        "Atrapamiento",
+        "Eléctrico",
+        "Carga suspendida",
+        "Colapso",
+        "Incendio",
+        "Ruido",
         "Vibraciones",
-        "Radicación solar (calor extremo)",
-        "Inhalación de polvo (cemento)",
-        "Exposición a solventes, pinturas o adhesivos",
-        "Contacto con sustancias corrosivas",
-        "Picaduras de insectos o mordeduras de animales en campo",
-        "Moho o bacterias en ambientes cerrados y húmedos",
-        "Contacto con líneas eléctricas aéreas o subterráneas",
-        "Caída de materiales mal almacenados",
-        "Mala iluminación en zonas de trabajo",
-        "Lluvias en la obra"
+        "Sustancias químicas",
+        "Sobreesfuerzo"
     )
+    val criticalRisks = setOf("Eléctrico", "Incendio", "Colapso")
+    var selectedRisks by remember { mutableStateOf(setOf<String>()) }
 
-    Scaffold (
+    val bottomBarItems = buildBottomItems(BottomDestination.Report, navController)
+
+    Scaffold(
+        containerColor = White,
         topBar = {
             ReusableTopAppBar(
-                title = "Agregar nueva zona de riesgo",
-                icon = Icons.Default.ArrowBack,
-                onClick = {
-                    navController.navigate(AppScreens.HomeScreen.name)
-                },
-                contentDescription = "Volver a home"
+                title = "Reportar riesgo",
+                trailingIcon = Icons.Outlined.Person,
+                onTrailingClick = { navController.navigate(AppScreens.ProfileScreen.name) },
+                showDivider = true
             )
-        }
-    ) {innerPadding->
-        Column (
+        },
+        bottomBar = { SafetyBottomBar(items = bottomBarItems) }
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = 40.dp, vertical = 20.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-
-
+                .background(White)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Text("Nombre:")
-            ReusableTextField(
-                value = nombre,
-                onValueChange = {nombre = it},
-                contenido = ""
-            )
-            Text("Descripción del riesgo:",
-                modifier = Modifier.padding(top = 18.dp))
-            ReusableTextField(
-                value = descripcion,
-                onValueChange = {descripcion = it},
-                contenido = ""
-            )
-            Text("Tipo de riesgo:",
-                modifier = Modifier.padding(top = 18.dp, bottom = 3.dp),
+            Text(
+                text = "Completa la información para notificar al equipo de seguridad.",
                 style = TextStyle(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp,
+                    color = SafetyTextSecondary,
+                    fontSize = 15.sp
                 )
             )
-            LazyColumn (
-                modifier = Modifier.background(color = Color(0xffCCEAFF))
-                    .height(350.dp)
-            ){
 
-                items(tipoRiesgoList){ tipoRiesgo->
-                    var checked by remember { mutableStateOf(false) }
-                    Row (
-                        Modifier.fillMaxWidth()
-                            .border(BorderStroke(width = 1.dp, color = Color.Black)),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SafetySurfaceAlt),
+                shape = RoundedCornerShape(26.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    ReusableTextField(
+                        contenido = "Título del riesgo",
+                        value = titulo,
+                        onValueChange = { titulo = it }
+                    )
 
-                    ) {
-                        Text(tipoRiesgo,
-                            modifier = Modifier.padding(3.dp)
-                                .width(265.dp)
+                    ReusableTextField(
+                        contenido = "Descripción del riesgo",
+                        value = descripcion,
+                        onValueChange = { descripcion = it },
+                        singleLine = false,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp)
+                    )
+
+                    Text(
+                        text = "Clasificación",
+                        style = TextStyle(
+                            color = SafetyTextPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
-                        Checkbox(
-                            checked = checked,
-                            onCheckedChange = {checked = it},
-                            modifier =  Modifier.padding(3.dp)
+                    )
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        riskOptions.forEach { risk ->
+                            val isSelected = risk in selectedRisks
+                            val isCritical = risk in criticalRisks
+                            RiskCategoryChip(
+                                label = risk,
+                                selected = isSelected,
+                                highlight = isCritical,
+                                onClick = {
+                                    selectedRisks = selectedRisks.toMutableSet().also { set ->
+                                        if (isSelected) set.remove(risk) else set.add(risk)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SafetySurfaceAlt),
+                shape = RoundedCornerShape(26.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Ubicación del riesgo",
+                        style = TextStyle(
+                            color = SafetyTextPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        ReusableTextField(
+                            contenido = "Latitud",
+                            value = latitud,
+                            onValueChange = { latitud = it },
+                            modifier = Modifier.weight(1f)
+                        )
+                        ReusableTextField(
+                            contenido = "Longitud",
+                            value = longitud,
+                            onValueChange = { longitud = it },
+                            modifier = Modifier.weight(1f)
+                        )
+                        ReusableTextField(
+                            contenido = "Altitud",
+                            value = altitud,
+                            onValueChange = { altitud = it },
+                            modifier = Modifier.weight(1f)
                         )
                     }
 
-                }
-
-            }
-            Text("Ubicación:",
-                modifier = Modifier.padding(top = 18.dp))
-            ReusableTextField(
-                value = ubicacion,
-                onValueChange = {ubicacion = it},
-                contenido = ""
-            )
-            Spacer(Modifier.height(15.dp))
-
-            Box(
-                modifier =  Modifier.border(
-                    width = 1.dp,
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color.Black,
-                )
-                    .align(Alignment.CenterHorizontally)
-            ){
-                Column (
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ){
-                        Text("Foto de perfil", Modifier.padding(3.dp))
-                        IconButton(
-                            onClick = {
-
-                            }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(SafetyNeutralLight),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.ExitToApp,
-                                contentDescription = "Tomarse una foto de perfil"
+                                imageVector = Icons.Outlined.LocationOn,
+                                contentDescription = null,
+                                tint = SafetyGreenPrimary,
+                                modifier = Modifier.size(32.dp)
                             )
-
+                            Text(
+                                text = "Vista previa del mapa",
+                                style = TextStyle(
+                                    color = SafetyTextSecondary,
+                                    fontSize = 14.sp
+                                )
+                            )
+                            Text(
+                                text = "Conecta tu ubicación para visualizarlo en el mapa.",
+                                style = TextStyle(
+                                    color = SafetyTextSecondary,
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
+                                ),
+                                textAlign = TextAlign.Center
+                            )
                         }
-
+                    }
                 }
             }
-            Spacer(Modifier.height(35.dp))
+
             ReusableButton(
+                label = "Reportar riesgo",
                 onClick = {
                     navController.navigate(AppScreens.HomeScreen.name)
                 },
-                label = "Registrar",
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
             )
-
         }
+    }
+}
 
+@Composable
+private fun RiskCategoryChip(
+    label: String,
+    selected: Boolean,
+    highlight: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = when {
+        selected -> SafetyGreenPrimary
+        highlight -> Color(0xFFE35B4F)
+        else -> SafetySurface
+    }
+    val contentColor = when {
+        selected || highlight -> White
+        else -> SafetyTextSecondary
+    }
+
+    Surface(
+        color = backgroundColor,
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Text(
+            text = label,
+            style = TextStyle(
+                color = contentColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            ),
+            modifier = Modifier
+                .clickable { onClick() }
+                .padding(horizontal = 18.dp, vertical = 10.dp)
+        )
     }
 }

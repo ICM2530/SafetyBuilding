@@ -20,24 +20,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChatBubble
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,25 +48,95 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.safetyfirst.R
 import com.safetyfirst.datos.FirebaseRepositorio
+import com.safetyfirst.modelo.Usuario
 import com.safetyfirst.ui.Rutas
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
-fun PantHomeObrero(nav: NavController) {
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("SafetyFirst · Obrero") }) },
-        bottomBar = {
-            BottomAppBar {
-                Button(onClick = { nav.navigate(Rutas.Perfil.ruta) }) { Text("Perfil") }
-                Spacer(Modifier.width(8.dp))
-                Button(onClick = { nav.navigate(Rutas.ChatUsuarios.ruta) }) { Text("Mensajes") }
+fun PantHomeObrero(nav: NavController, repo: FirebaseRepositorio = FirebaseRepositorio()) {
+    val brandGreen = Color(0xFF0B5F2A)
+    val currentUid = repo.usuarioActual()?.uid
+    val zonas by repo.flujoZonas().collectAsState(initial = emptyList())
+    val usuario by produceState<Usuario?>(initialValue = null, currentUid) {
+        value = currentUid?.let { repo.obtenerUsuario(it) }
+    }
+
+    val zonasAsignadasIds = usuario?.zonasAsignadas.orEmpty()
+    val zonasAsignadas = zonas.filter { it.id in zonasAsignadasIds }
+
+    val pendientesInspeccion = zonasAsignadas.count { it.tipos.isEmpty() }
+    val conEvidencia = zonasAsignadas.count { it.fotoUrl.isNotBlank() }
+
+    val statCards = listOf(
+        DashboardStat(zonasAsignadas.size.toString(), "Zonas asignadas", highlight = true),
+        DashboardStat(pendientesInspeccion.toString(), "Pendientes por revisar", highlight = false),
+        DashboardStat(conEvidencia.toString(), "Con evidencia registrada", highlight = false)
+    )
+
+    val alertCards = zonasAsignadas
+        .sortedByDescending { it.radioMetros }
+        .take(5)
+        .map {
+            val resumen = buildString {
+                append(it.descripcion.ifBlank { "Sin descripción" }.take(70))
+                if (it.descripcion.length > 70) append("…")
+                append(" • Radio ${it.radioMetros} m")
             }
+            DashboardAlert(
+                id = it.id,
+                title = it.titulo.ifBlank { "Zona por nombrar" },
+                subtitle = resumen
+            )
         }
-    ) { p ->
-        Column(Modifier.padding(p).padding(16.dp)) {
-            Text("Inicio", style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = { nav.navigate(Rutas.Zonas.ruta) }) { Text("Riesgos") }
+
+    val quickActions = listOf(
+        WorkerQuickAction(
+            icon = Icons.Outlined.Add,
+            title = "Reportar hallazgo",
+            description = "Captura un nuevo riesgo con fotos y descripción detallada."
+        ) { nav.navigate(Rutas.Zonas.ruta) },
+        WorkerQuickAction(
+            icon = Icons.Outlined.Map,
+            title = "Ver mapa asignado",
+            description = "Consulta los límites y puntos críticos de tu jornada."
+        ) { nav.navigate(Rutas.MapaSupervisor.ruta) },
+        WorkerQuickAction(
+            icon = Icons.Outlined.ChatBubble,
+            title = "Contactar supervisor",
+            description = "Envía una actualización o solicita apoyo de inmediato."
+        ) { nav.navigate(Rutas.ChatUsuarios.ruta) }
+    )
+
+    Scaffold(
+        containerColor = Color.White,
+        bottomBar = { WorkerBottomBar(nav, brandGreen) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            WorkerDashboardHeader(usuario, brandGreen, nav)
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                statCards.forEach { stat -> StatisticCard(stat, brandGreen) }
+            }
+
+            WorkerQuickActionsSection(quickActions, brandGreen)
+
+            WorkerAlertSection(
+                alerts = alertCards,
+                onAlertClick = { id -> nav.navigate(Rutas.RiesgoDetalle.ruta + "/$id") }
+            )
+
+            Spacer(Modifier.height(90.dp))
         }
     }
 }
@@ -220,6 +289,169 @@ private fun StatisticCard(stat: DashboardStat, brandGreen: Color) {
 }
 
 @Composable
+private fun WorkerDashboardHeader(usuario: Usuario?, brandGreen: Color, nav: NavController) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = if (!usuario?.nombre.isNullOrBlank()) "Hola, ${usuario?.nombre?.trim()}" else "Hola",
+                color = Color.Black,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Mantén actualizada la información de tu frente de obra.",
+                color = Color(0xFF4A4A4A),
+                fontSize = 14.sp
+            )
+        }
+        IconButton(onClick = { nav.navigate(Rutas.Perfil.ruta) }) {
+            Icon(
+                imageVector = Icons.Outlined.Person,
+                contentDescription = "Ir a mi perfil",
+                tint = brandGreen,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun WorkerQuickActionsSection(
+    actions: List<WorkerQuickAction>,
+    brandGreen: Color
+) {
+    if (actions.isEmpty()) return
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Acciones rápidas",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black
+        )
+
+        actions.forEach { action ->
+            WorkerQuickActionCard(action, brandGreen)
+        }
+    }
+}
+
+@Composable
+private fun WorkerQuickActionCard(action: WorkerQuickAction, brandGreen: Color) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = action.onClick),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE7EFE4)),
+        shape = RoundedCornerShape(28.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Surface(
+                color = Color.White,
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Icon(
+                    imageVector = action.icon,
+                    contentDescription = null,
+                    tint = brandGreen,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .size(28.dp)
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = action.title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+                Text(
+                    text = action.description,
+                    fontSize = 13.sp,
+                    color = Color(0xFF4A4A4A)
+                )
+            }
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = brandGreen.copy(alpha = 0.7f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun WorkerAlertSection(alerts: List<DashboardAlert>, onAlertClick: (String) -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Alertas asignadas",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black
+        )
+
+        if (alerts.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F1F1)),
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Tu jornada está al día",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Cuando un supervisor te asigne una zona, aparecerá aquí.",
+                        fontSize = 13.sp,
+                        color = Color(0xFF5F5F5F)
+                    )
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                alerts.forEach { alert ->
+                    AlertCard(alert) { onAlertClick(alert.id) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun AlertCard(alert: DashboardAlert, onClick: () -> Unit) {
     Card(
         modifier = Modifier
@@ -251,9 +483,6 @@ private fun AlertCard(alert: DashboardAlert, onClick: () -> Unit) {
 
 @Composable
 fun SupervisorBottomBar(nav: NavController, brandGreen: Color) {
-    val navBackStackEntry by nav.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route.orEmpty()
-
     val items = listOf(
         BottomBarItem(Icons.Filled.Home, "Inicio", Rutas.HomeSupervisor.ruta),
         BottomBarItem(Icons.Outlined.ChatBubble, "Mensajes", Rutas.ChatUsuarios.ruta),
@@ -261,6 +490,31 @@ fun SupervisorBottomBar(nav: NavController, brandGreen: Color) {
         BottomBarItem(Icons.Outlined.Group, "Operadores", Rutas.Operadores.ruta),
         BottomBarItem(Icons.Filled.Add, "Nueva zona", Rutas.Zonas.ruta)
     )
+
+    RoundedBottomNavigation(nav, brandGreen, items)
+}
+
+@Composable
+fun WorkerBottomBar(nav: NavController, brandGreen: Color) {
+    val items = listOf(
+        BottomBarItem(Icons.Filled.Home, "Inicio", Rutas.HomeObrero.ruta),
+        BottomBarItem(Icons.Outlined.Add, "Reportar", Rutas.Zonas.ruta),
+        BottomBarItem(Icons.Outlined.Map, "Mapa", Rutas.MapaSupervisor.ruta),
+        BottomBarItem(Icons.Outlined.ChatBubble, "Chat", Rutas.ChatUsuarios.ruta),
+        BottomBarItem(Icons.Outlined.Person, "Perfil", Rutas.Perfil.ruta)
+    )
+
+    RoundedBottomNavigation(nav, brandGreen, items)
+}
+
+@Composable
+private fun RoundedBottomNavigation(
+    nav: NavController,
+    brandGreen: Color,
+    items: List<BottomBarItem>
+) {
+    val navBackStackEntry by nav.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route.orEmpty()
 
     Box(
         modifier = Modifier.fillMaxWidth(),
@@ -328,4 +582,11 @@ private data class BottomBarItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val contentDescription: String,
     val route: String
+)
+
+private data class WorkerQuickAction(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val title: String,
+    val description: String,
+    val onClick: () -> Unit
 )

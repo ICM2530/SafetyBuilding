@@ -1,306 +1,341 @@
 package com.example.main.Screens
 
 import Navigation.AppScreens
-import android.annotation.SuppressLint
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
+import Navigation.BottomDestination
+import Navigation.buildBottomItems
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.Icons.Default
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DrawerState
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FabPosition
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDrawerState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentRecomposeScope
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
-import androidx.navigation.navOptions
 import com.example.main.CompReusable.ReusableTopAppBar
-import com.example.main.utils.theme.Blue
-import com.example.main.utils.theme.Red
+import com.example.main.CompReusable.SafetyBottomBar
+import com.example.main.CompReusable.ReusableButton
+import com.example.main.utils.theme.SafetyGreenHighlight
+import com.example.main.utils.theme.SafetyGreenPrimary
+import com.example.main.utils.theme.SafetyNeutral
+import com.example.main.utils.theme.SafetyNeutralLight
+import com.example.main.utils.theme.SafetySurface
+import com.example.main.utils.theme.SafetySurfaceAlt
+import com.example.main.utils.theme.SafetyTextPrimary
+import com.example.main.utils.theme.SafetyTextSecondary
 import com.example.main.utils.theme.White
-import com.safetyfirst.R
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen (navController: NavController){
+fun HomeScreen(navController: NavController) {
+    val bottomBarItems = buildBottomItems(BottomDestination.Home, navController)
 
-    var showNoiseAlert by remember { mutableStateOf(false) }
-
-    var hablar by remember { mutableStateOf(false) }
-    var drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    var scope = rememberCoroutineScope()
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                TextButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        navController.navigate(AppScreens.ProfileScreen.name)
-                    }
-                ) {
-                    Row (verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Start,modifier = Modifier.fillMaxWidth(),){
-                        Icon(
-                            imageVector = Icons.Default.Person ,
-                            contentDescription = "boton de perfil",
-                            tint = Color.Black
-                        )
-                        Text("Perfil", modifier = Modifier.padding(horizontal =  5.dp), color = Color.Black)
-                    }
-                }
-                TextButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        navController.navigate(AppScreens.ChatScreen.name)
-                    }
-                ) {
-                    Row (verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Start, modifier = Modifier.fillMaxWidth(),){
-                        Icon(
-                            imageVector = Icons.Default.Email ,
-                            contentDescription = "boton de chat",
-                            tint = Color.Black
-                        )
-                        Text("Mensajes", modifier = Modifier.padding(horizontal =  5.dp),color = Color.Black)
-                    }
-                }
-                TextButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        navController.navigate(AppScreens.RiskZones.name)
-                    }
-                ) {
-                    Row (verticalAlignment = Alignment.CenterVertically,  horizontalArrangement = Arrangement.Start, modifier = Modifier.fillMaxWidth(),){
-                        Icon(
-                            imageVector = Icons.Default.Warning ,
-                            contentDescription = "boton de zonas de riesgo",
-                            tint = Color.Black
-                        )
-                        Text("Zonas de riesgo", modifier = Modifier.padding(horizontal =  5.dp),color = Color.Black)
-                    }
-                }
-                TextButton(
-
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        navController.navigate(AppScreens.LogInScreen.name)
-                    }
-                ) {
-                    Row (verticalAlignment = Alignment.CenterVertically,  horizontalArrangement = Arrangement.Start, modifier = Modifier.fillMaxWidth(),){
-                        Icon(
-                            imageVector = Icons.Default.ExitToApp ,
-                            contentDescription = "cerrar secion",
-                            tint = Color.Red
-                        )
-                        Text("Cerrar sesion", modifier = Modifier.padding(horizontal =  5.dp),
-                            color = Red)
-                    }
-                }
-            }
-
-        }
+    val updates = listOf(
+        DashboardUpdate(
+            title = "Alerta eléctrica en planta baja",
+            description = "Se registró un corte de energía y exposición de cables  hace 12 minutos.",
+            level = "Alta prioridad"
+        ),
+        DashboardUpdate(
+            title = "Revisión de EPP",
+            description = "El equipo de estructuras completó la inspección semanal de seguridad.",
+            level = "Rutina"
+        ),
+        DashboardUpdate(
+            title = "Nueva zona monitoreada",
+            description = "Se agregó el cuarto de control como zona crítica para seguimiento.",
+            level = "Actualización"
+        )
     )
-    {
-        Scaffold(
-            topBar = {
-                ReusableTopAppBar(
-                    title = "Safety First",
-                    icon = Default.Menu,
-                    modifier = Modifier.background(color = Blue).fillMaxWidth(),
-                    onClick = {
 
-                            scope.launch {
-                                if (drawerState.isClosed) {
-                                    drawerState.open()
-                                } else {
-                                    drawerState.close()
-                                }
-                            }
-
-                    },
-                    contentDescription = "Menu",
-                    textAlign = TextAlign.Center,
-                    textStyle = TextStyle(
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                )
-            },
-            floatingActionButton = {
-                FloatingActionButton(
-                    containerColor = Red,
-                    onClick = { navController.navigate(AppScreens.AddZoneRisk.name) }
-                ) {
-                    Icon(
-                        imageVector = Default.Add,
-                        tint = White,
-                        contentDescription = "Agregar zona de riesgo"
-                    )
-                }
-            }
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier.padding(innerPadding).fillMaxWidth().fillMaxHeight(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Image(
-                    painter = if (!hablar) {
-                        painterResource(R.drawable.boton_rojo_2)
-                    } else {
-                        painterResource(R.drawable.boton_verde)
-                    },
-                    contentDescription = "Boton para hablar",
-                    modifier = Modifier.clickable {
-                        hablar = !hablar
+    Scaffold(
+        containerColor = White,
+        bottomBar = { SafetyBottomBar(items = bottomBarItems) }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .background(White)
+        ) {
+            ReusableTopAppBar(
+                title = "Dashboard",
+                trailingIcon = null,
+                actions = {
+                    IconButton(onClick = { /* TODO: notificaciones */ }) {
+                        Icon(
+                            imageVector = Icons.Outlined.NotificationsNone,
+                            contentDescription = "Notificaciones",
+                            tint = SafetyTextPrimary
+                        )
                     }
-                        .width(315.dp).height(315.dp)
+                    IconButton(onClick = {
+                        navController.navigate(AppScreens.ProfileScreen.name)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = "Perfil",
+                            tint = SafetyTextPrimary
+                        )
+                    }
+                },
+                showDivider = true
+            )
 
-                )
-                TextButton(onClick = { showNoiseAlert = true }) {
-                    Text("Botón para alerta de ruido")
+            val listState = rememberLazyListState()
+            LazyColumn(
+                state = listState,
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item {
+                    DashboardSummaryCard(onCreateReport = {
+                        navController.navigate(AppScreens.AddZoneRisk.name)
+                    })
                 }
-            }
 
-            // Mostramos la alerta como modal:
-            if (showNoiseAlert) {
-                Dialog(onDismissRequest = { showNoiseAlert = false }) {
-                    HighNoiseAlert(
-                        onNotify = {
-                            showNoiseAlert = false
-                        },
-                        onClose = { showNoiseAlert = false }
+                item {
+                    QuickActionsRow(
+                        actions = listOf(
+                            QuickAction(
+                                icon = Icons.AutoMirrored.Outlined.Article,
+                                title = "Reportes",
+                                description = "Historial de incidentes"
+                            ) { navController.navigate(AppScreens.RiskCodeScreen.name) },
+                            QuickAction(
+                                icon = Icons.Outlined.Map,
+                                title = "Mapa",
+                                description = "Ubicación de zonas"
+                            ) { navController.navigate(AppScreens.RiskZones.name) },
+                            QuickAction(
+                                icon = Icons.Outlined.Group,
+                                title = "Equipo",
+                                description = "Supervisores a cargo"
+                            ) { navController.navigate(AppScreens.ChatScreen.name) }
+                        )
                     )
                 }
-            }
 
-            }
+                item {
+                    Text(
+                        text = "Actualizaciones recientes",
+                        style = TextStyle(
+                            color = SafetyTextPrimary,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
+                items(updates) { update ->
+                    DashboardUpdateCard(update = update)
+                }
+            }
         }
     }
-
-
-
+}
 
 @Composable
-fun HighNoiseAlert(
-    onNotify: () -> Unit,
-    onClose: () -> Unit
-) {
+private fun DashboardSummaryCard(onCreateReport: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFD8E9F7)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
+        colors = CardDefaults.cardColors(containerColor = SafetySurfaceAlt),
+        shape = RoundedCornerShape(28.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "¡ALERTA!",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                text = "120",
+                style = TextStyle(
+                    color = SafetyGreenPrimary,
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
             )
-            Spacer(Modifier.height(4.dp))
             Text(
-                text = "Ruido muy alto",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center
+                text = "Riesgos reportados en la semana",
+                style = TextStyle(
+                    color = SafetyTextSecondary,
+                    fontSize = 16.sp
+                )
             )
-
-            Spacer(Modifier.height(16.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
+            Surface(
+                color = SafetyNeutralLight,
+                shape = RoundedCornerShape(20.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ruido),
-                    contentDescription = "Icono de ruido alto",
-                    modifier = Modifier.size(150.dp)
+                Text(
+                    text = "Última actualización - hace 8 minutos",
+                    style = TextStyle(
+                        color = SafetyTextSecondary,
+                        fontSize = 13.sp
+                    ),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
                 )
             }
-
-            Spacer(Modifier.height(16.dp))
-
-            Text(
-                text = "¿Desea enviar advertencia de esta\nzona al supervisor?",
-                textAlign = TextAlign.Center
+            ReusableButton(
+                label = "Crear reporte",
+                onClick = onCreateReport
             )
+        }
+    }
+}
 
-            Spacer(Modifier.height(18.dp))
+private data class QuickAction(
+    val icon: ImageVector,
+    val title: String,
+    val description: String,
+    val onClick: () -> Unit
+)
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+@Composable
+private fun QuickActionsRow(actions: List<QuickAction>) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        actions.forEach { action ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SafetySurface),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { action.onClick() }
             ) {
-                Button(
-                    onClick = onNotify,
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .height(40.dp)
-                ) { Text("Notificar") }
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(18.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(SafetyNeutral),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = action.icon,
+                            contentDescription = action.title,
+                            tint = SafetyGreenHighlight
+                        )
+                    }
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = action.title,
+                            style = TextStyle(
+                                color = SafetyTextPrimary,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                        Text(
+                            text = action.description,
+                            style = TextStyle(
+                                color = SafetyTextSecondary,
+                                fontSize = 14.sp
+                            )
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Outlined.ChevronRight,
+                        contentDescription = null,
+                        tint = SafetyGreenPrimary
+                    )
+                }
+            }
+        }
+    }
+}
 
-                Button(
-                    onClick = onClose,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(40.dp)
-                ) { Text("Cerrar") }
+private data class DashboardUpdate(
+    val title: String,
+    val description: String,
+    val level: String
+)
+
+@Composable
+private fun DashboardUpdateCard(update: DashboardUpdate) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SafetySurface),
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = update.title,
+                style = TextStyle(
+                    color = SafetyTextPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+            Text(
+                text = update.description,
+                style = TextStyle(
+                    color = SafetyTextSecondary,
+                    fontSize = 14.sp
+                )
+            )
+            Surface(
+                color = SafetyNeutralLight,
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Text(
+                    text = update.level,
+                    style = TextStyle(
+                        color = SafetyGreenPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                )
             }
         }
     }
