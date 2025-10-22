@@ -6,6 +6,11 @@
 package com.safetyfirst.ui.pantallas
 
 import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +34,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Collections
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -40,6 +47,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -61,6 +69,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +79,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
+import com.safetyfirst.ui.sensors.rememberAltitudeMeters
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -83,10 +99,11 @@ import com.safetyfirst.datos.FirebaseRepositorio
 import com.safetyfirst.modelo.TipoRiesgo
 import com.safetyfirst.modelo.ZonaRiesgo
 import com.safetyfirst.ui.Rutas
-import com.safetyfirst.ui.pantallas.SupervisorBottomBar
+import java.io.File
+import java.io.InputStream
+import java.util.Locale
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import android.content.pm.PackageManager
 
 @Composable
 fun PantRiesgoFormulario(nav: NavController, repo: FirebaseRepositorio = FirebaseRepositorio()) {
@@ -112,6 +129,56 @@ fun PantRiesgoFormulario(nav: NavController, repo: FirebaseRepositorio = Firebas
     var altitude by remember { mutableStateOf<Double?>(null) }
 
     var guardando by remember { mutableStateOf(false) }
+
+    val altitudeSensor by rememberAltitudeMeters()
+    LaunchedEffect(altitudeSensor) {
+        altitudeSensor?.let {
+            altitude = it
+            if (altText == "-" || altText.isBlank()) {
+                altText = formatAltitudeValue(it)
+            }
+        }
+    }
+
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            tempCameraUri?.let { uri ->
+                photoUri = uri
+                photoBitmap = decodeBitmapFromUri(context, uri)
+            }
+        }
+    }
+
+    val pickMediaLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            photoUri = uri
+            photoBitmap = decodeBitmapFromUri(context, uri)
+        }
+    }
+
+    fun capturePhoto() {
+        val uri = createImageUri(context)
+        tempCameraUri = uri
+        takePictureLauncher.launch(uri)
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            capturePhoto()
+        } else {
+            scope.launch {
+                snackbarHost.showSnackbar("Se requiere el permiso de cámara para tomar fotografías.")
+            }
+        }
+    }
 
     val fusedClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val hasLocationPermission = ContextCompat.checkSelfPermission(
@@ -190,19 +257,65 @@ fun PantRiesgoFormulario(nav: NavController, repo: FirebaseRepositorio = Firebas
                     )
                 )
 
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(140.dp),
-                    shape = RoundedCornerShape(30),
-                    color = Color(0xFFD9D9D9)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "Añadir evidencia fotográfica (pendiente)",
-                            textAlign = TextAlign.Center,
-                            color = Color(0xFF555555)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Evidencia fotográfica", fontWeight = FontWeight.SemiBold)
+                    if (photoBitmap != null) {
+                        Image(
+                            bitmap = photoBitmap!!.asImageBitmap(),
+                            contentDescription = "Evidencia fotográfica",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                                .clip(RoundedCornerShape(24.dp)),
+                            contentScale = ContentScale.Crop
                         )
+                    } else {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(140.dp),
+                            shape = RoundedCornerShape(30),
+                            color = Color(0xFFD9D9D9)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "Aún no has añadido evidencia fotográfica",
+                                    textAlign = TextAlign.Center,
+                                    color = Color(0xFF555555)
+                                )
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                                    capturePhoto()
+                                } else {
+                                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = brandGreen)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Tomar foto")
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                pickMediaLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Outlined.Collections, contentDescription = null, tint = brandGreen)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Galería")
+                        }
                     }
                 }
             }
@@ -327,7 +440,7 @@ fun PantRiesgoFormulario(nav: NavController, repo: FirebaseRepositorio = Firebas
                                     radioMetros = 20.0,
                                     creadorUid = uid,
                                     tipos = tiposSeleccionados,
-                                    fotoUrl = "",
+                                    fotoUrl = photoUri?.toString() ?: "",
                                     altitud = altitude ?: altText.toDoubleOrNull() ?: 0.0
                                 )
                             )
@@ -335,6 +448,9 @@ fun PantRiesgoFormulario(nav: NavController, repo: FirebaseRepositorio = Firebas
                             titulo = ""
                             descripcion = ""
                             seleccionados.keys.forEach { seleccionados[it] = false }
+                            photoUri = null
+                            photoBitmap = null
+                            tempCameraUri = null
                         } catch (e: Exception) {
                             snackbarHost.showSnackbar("No se pudo guardar: ${e.message ?: "error"}")
                         } finally {
@@ -411,6 +527,23 @@ private fun RowScope.CoordinateField(
 }
 
 private fun formatCoordinate(value: Double): String = String.format("%.6f", value)
+
+private fun createImageUri(context: Context): Uri {
+    val imagesDir = File(context.cacheDir, "images").apply { mkdirs() }
+    val imageFile = File(imagesDir, "capture_${System.currentTimeMillis()}.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", imageFile)
+}
+
+private fun decodeBitmapFromUri(context: Context, uri: Uri): Bitmap? =
+    try {
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream)
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+private fun formatAltitudeValue(value: Double): String = String.format(Locale.US, "%.1f", value)
 private fun formatAltitude(value: Double): String = String.format("%.1f", value)
 
 @Composable

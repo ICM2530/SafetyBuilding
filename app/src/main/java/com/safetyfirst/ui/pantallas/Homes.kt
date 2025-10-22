@@ -2,6 +2,10 @@
 
 package com.safetyfirst.ui.pantallas
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,30 +30,51 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.safetyfirst.R
 import com.safetyfirst.datos.FirebaseRepositorio
 import com.safetyfirst.modelo.Usuario
 import com.safetyfirst.ui.Rutas
+import com.safetyfirst.ui.sensors.NoiseMeter
+import com.safetyfirst.ui.sensors.rememberAltitudeMeters
+import com.safetyfirst.ui.sensors.rememberFallDetector
+import com.safetyfirst.ui.sensors.rememberNoiseMeter
+import kotlinx.coroutines.launch
+import java.util.Locale
+import kotlin.math.roundToInt
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
@@ -61,16 +86,49 @@ fun PantHomeObrero(nav: NavController, repo: FirebaseRepositorio = FirebaseRepos
         value = currentUid?.let { repo.obtenerUsuario(it) }
     }
 
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val noiseMeter = rememberNoiseMeter()
+    var showNoiseDialog by remember { mutableStateOf(false) }
+    var fallAlert by remember { mutableStateOf(false) }
+    val altitude by rememberAltitudeMeters()
+
+    rememberFallDetector {
+        fallAlert = true
+    }
+
+    LaunchedEffect(fallAlert) {
+        if (fallAlert) {
+            snackbarHostState.showSnackbar("Posible caída detectada. Confirma tu estado.")
+        }
+    }
+
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            showNoiseDialog = true
+        } else {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Se necesita acceso al micrófono para medir el nivel de ruido.")
+            }
+        }
+    }
+
     val zonasAsignadasIds = usuario?.zonasAsignadas.orEmpty()
     val zonasAsignadas = zonas.filter { it.id in zonasAsignadasIds }
 
     val pendientesInspeccion = zonasAsignadas.count { it.tipos.isEmpty() }
     val conEvidencia = zonasAsignadas.count { it.fotoUrl.isNotBlank() }
 
+    val altitudeStat = altitude?.let { String.format(Locale.US, "%.1f", it) } ?: "--"
+
     val statCards = listOf(
         DashboardStat(zonasAsignadas.size.toString(), "Zonas asignadas", highlight = true),
         DashboardStat(pendientesInspeccion.toString(), "Pendientes por revisar", highlight = false),
-        DashboardStat(conEvidencia.toString(), "Con evidencia registrada", highlight = false)
+        DashboardStat(conEvidencia.toString(), "Con evidencia registrada", highlight = false),
+        DashboardStat(altitudeStat, "Altitud actual (m)", highlight = false)
     )
 
     val alertCards = zonasAsignadas
@@ -104,11 +162,23 @@ fun PantHomeObrero(nav: NavController, repo: FirebaseRepositorio = FirebaseRepos
             icon = Icons.Outlined.ChatBubble,
             title = "Contactar supervisor",
             description = "Envía una actualización o solicita apoyo de inmediato."
-        ) { nav.navigate(Rutas.ChatUsuarios.ruta) }
+        ) { nav.navigate(Rutas.ChatUsuarios.ruta) },
+        WorkerQuickAction(
+            icon = Icons.AutoMirrored.Outlined.VolumeUp,
+            title = "Medir nivel de ruido",
+            description = "Analiza el ruido ambiente y detecta niveles peligrosos."
+        ) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                showNoiseDialog = true
+            } else {
+                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        }
     )
 
     Scaffold(
         containerColor = Color.White,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = { WorkerBottomBar(nav, brandGreen) }
     ) { padding ->
         Column(
@@ -138,6 +208,36 @@ fun PantHomeObrero(nav: NavController, repo: FirebaseRepositorio = FirebaseRepos
 
             Spacer(Modifier.height(90.dp))
         }
+    }
+
+    if (fallAlert) {
+        AlertDialog(
+            onDismissRequest = { fallAlert = false },
+            title = { Text("Posible caída detectada") },
+            text = {
+                Text("Registramos un movimiento brusco. Si necesitas asistencia, contacta a tu supervisor o marca una alerta.")
+            },
+            confirmButton = {
+                TextButton(onClick = { fallAlert = false }) {
+                    Text("Estoy bien")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    fallAlert = false
+                    nav.navigate(Rutas.ChatUsuarios.ruta)
+                }) {
+                    Text("Pedir ayuda")
+                }
+            }
+        )
+    }
+
+    if (showNoiseDialog) {
+        NoiseMeasurementDialog(
+            noiseMeter = noiseMeter,
+            onDismiss = { showNoiseDialog = false }
+        )
     }
 }
 
@@ -590,3 +690,56 @@ private data class WorkerQuickAction(
     val description: String,
     val onClick: () -> Unit
 )
+
+@Composable
+private fun NoiseMeasurementDialog(
+    noiseMeter: NoiseMeter,
+    onDismiss: () -> Unit
+) {
+    val decibels by noiseMeter.decibels
+
+    LaunchedEffect(Unit) {
+        noiseMeter.start()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { noiseMeter.stop() }
+    }
+
+    val dbValue = decibels.coerceAtLeast(0.0)
+    val status = when {
+        dbValue >= 85 -> "Riesgo alto"
+        dbValue >= 65 -> "Precaución"
+        else -> "Nivel seguro"
+    }
+    val statusColor = when {
+        dbValue >= 85 -> Color(0xFFD74C3D)
+        dbValue >= 65 -> Color(0xFFF3A03A)
+        else -> Color(0xFF0B5F2A)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Medición de ruido") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "${dbValue.roundToInt()} dB",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Text(
+                    text = status,
+                    color = statusColor,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "Se recomienda protección auditiva cuando superas los 85 dB.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cerrar") }
+        }
+    )
+}

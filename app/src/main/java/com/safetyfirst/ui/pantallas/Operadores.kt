@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.safetyfirst.datos.FirebaseResultado
 import com.safetyfirst.datos.FirebaseRepositorio
+import com.safetyfirst.datos.MockInMemory
 import com.safetyfirst.modelo.Rol
 import com.safetyfirst.modelo.Usuario
 import com.safetyfirst.ui.Rutas
@@ -49,18 +50,33 @@ fun PantOperadoresLista(nav: NavController, repo: FirebaseRepositorio = Firebase
                 }
             }
             is FirebaseResultado.Error -> {
-                Box(
-                    modifier = Modifier
-                        .padding(p)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(actual.mensaje)
+                // Fallback a datos en memoria si no hay permisos o RTDB no está configurado
+                val lista = remember { MockInMemory.usuariosPorRol(Rol.OBRERO) }
+                LazyColumn(Modifier.padding(p).padding(8.dp)) {
+                    items(lista) { u ->
+                        Card(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
+                                    .clickable { nav.navigate(Rutas.OperadorPerfil.ruta + "/" + u.uid) },
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row {
+                                    Icon(Icons.Filled.Person, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(u.nombre.ifEmpty { u.correo })
+                                }
+                                Icon(Icons.Filled.ChevronRight, contentDescription = null)
+                            }
+                        }
+                    }
                 }
             }
             is FirebaseResultado.Exito -> {
+                val lista = if (actual.datos.isNotEmpty()) actual.datos else MockInMemory.usuariosPorRol(Rol.OBRERO)
                 LazyColumn(Modifier.padding(p).padding(8.dp)) {
-                    items(actual.datos) { u ->
+                    items(lista) { u ->
                         Card(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                             Row(
                                 Modifier
@@ -87,7 +103,7 @@ fun PantOperadoresLista(nav: NavController, repo: FirebaseRepositorio = Firebase
 @Composable
 fun PantOperadorPerfil(nav: NavController, uid: String, repo: FirebaseRepositorio = FirebaseRepositorio()) {
     var u by remember { mutableStateOf<Usuario?>(null) }
-    LaunchedEffect(uid) { u = repo.obtenerUsuario(uid) }
+    LaunchedEffect(uid) { u = repo.obtenerUsuario(uid) ?: MockInMemory.usuarioPorUid(uid) }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Perfil operador") }) }) { p ->
         Column(Modifier.padding(p).padding(16.dp)) {

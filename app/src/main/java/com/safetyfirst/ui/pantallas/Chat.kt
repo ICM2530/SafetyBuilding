@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.safetyfirst.datos.FirebaseRepositorio
+import com.safetyfirst.datos.MockInMemory
 import com.safetyfirst.modelo.Mensaje
 import kotlinx.coroutines.launch
 
@@ -24,7 +25,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun PantUsuariosChatLista(nav: NavController, repo: FirebaseRepositorio = FirebaseRepositorio()) {
     val yo = repo.usuarioActual()?.uid.orEmpty()
-    val usuarios by repo.flujoUsuarios().collectAsState(initial = emptyList())
+    val usuariosRemotos by repo.flujoUsuarios().collectAsState(initial = emptyList())
+    val usuarios = if (usuariosRemotos.isNotEmpty()) usuariosRemotos else MockInMemory.usuariosExcept(yo)
 
     Scaffold(topBar = { TopAppBar(title = { Text("Conversaciones") }) }) { p ->
         LazyColumn(Modifier.padding(p)) {
@@ -55,7 +57,10 @@ fun PantChat(
 ) {
     val yo = repo.usuarioActual()?.uid.orEmpty()
     val convId = remember(uidOtro, yo) { repo.construirConversacionId(yo, uidOtro) }
-    val mensajes by repo.flujoMensajes(convId).collectAsState(initial = emptyList())
+    val mensajesRemotos by repo.flujoMensajes(convId).collectAsState(initial = emptyList())
+    val mensajesMock by MockInMemory.flujoMensajes(convId).collectAsState(initial = emptyList())
+    val useMock = mensajesRemotos.isEmpty()
+    val mensajes = if (useMock) mensajesMock else mensajesRemotos
     var texto by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
@@ -100,15 +105,18 @@ fun PantChat(
                 Button(onClick = {
                     if (texto.isNotBlank()) {
                         scope.launch {
-                            repo.enviarMensaje(
-                                Mensaje(
-                                    conversacionId = convId,
-                                    emisorUid = yo,
-                                    receptorUid = uidOtro,
-                                    texto = texto.trim(),
-                                    tiempo = System.currentTimeMillis()
-                                )
+                            val nuevo = Mensaje(
+                                conversacionId = convId,
+                                emisorUid = yo,
+                                receptorUid = uidOtro,
+                                texto = texto.trim(),
+                                tiempo = System.currentTimeMillis()
                             )
+                            if (useMock) {
+                                MockInMemory.enviarMensajeLocal(nuevo)
+                            } else {
+                                repo.enviarMensaje(nuevo)
+                            }
                             texto = ""
                         }
                     }
