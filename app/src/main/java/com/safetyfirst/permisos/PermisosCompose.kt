@@ -31,10 +31,12 @@ fun PantPermisos(nav: NavController, repo: FirebaseRepositorio = FirebaseReposit
 
     var locFinaOk by remember { mutableStateOf(permisoConcedido(Manifest.permission.ACCESS_FINE_LOCATION, act)) }
     var locGruesaOk by remember { mutableStateOf(permisoConcedido(Manifest.permission.ACCESS_COARSE_LOCATION, act)) }
+    var microOk by remember { mutableStateOf(permisoConcedido(Manifest.permission.RECORD_AUDIO, act)) }
     var notifOk by remember { mutableStateOf(Build.VERSION.SDK_INT < 33 || permisoConcedido(Manifest.permission.POST_NOTIFICATIONS, act)) }
 
     val pedirLocFina = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { locFinaOk = it }
     val pedirLocGruesa = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { locGruesaOk = it }
+    val pedirMicro = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { microOk = it }
     val pedirNotif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { notifOk = it }
 
     fun justificar(permiso: String, msg: String) {
@@ -43,9 +45,8 @@ fun PantPermisos(nav: NavController, repo: FirebaseRepositorio = FirebaseReposit
         }
     }
 
-    LaunchedEffect(locFinaOk, locGruesaOk, notifOk) {
-        if (locFinaOk && locGruesaOk && notifOk) {
-            // Navega según el rol en RTDB
+    LaunchedEffect(locFinaOk, locGruesaOk, microOk, notifOk) {
+        if (locFinaOk && locGruesaOk && microOk && notifOk) {
             val uid = repo.usuarioActual()?.uid
             if (uid != null) {
                 val u = repo.obtenerUsuario(uid)
@@ -64,7 +65,7 @@ fun PantPermisos(nav: NavController, repo: FirebaseRepositorio = FirebaseReposit
             Text("Ubicación precisa")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = {
-                    justificar(Manifest.permission.ACCESS_FINE_LOCATION, "Necesitamos ubicación precisa para alertas.")
+                    justificar(Manifest.permission.ACCESS_FINE_LOCATION, "Necesitamos ubicación precisa para alertas de riesgo (altura).")
                     pedirLocFina.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }) { Text(if (locFinaOk) "Concedido" else "Solicitar") }
 
@@ -74,6 +75,17 @@ fun PantPermisos(nav: NavController, repo: FirebaseRepositorio = FirebaseReposit
                 }) { Text(if (locGruesaOk) "Concedido" else "Solicitar") }
             }
         } }
+
+        Card { Column(Modifier.padding(12.dp)) {
+            Text("Micrófono (Ruido)")
+            Button(onClick = {
+                justificar(Manifest.permission.RECORD_AUDIO, "Necesitamos acceso al micrófono para detectar niveles de ruido peligroso.")
+                pedirMicro.launch(Manifest.permission.RECORD_AUDIO)
+            }) {
+                Text(if (microOk) "Concedido" else "Solicitar")
+            }
+        } }
+
 
         if (Build.VERSION.SDK_INT >= 33) {
             Card { Column(Modifier.padding(12.dp)) {
