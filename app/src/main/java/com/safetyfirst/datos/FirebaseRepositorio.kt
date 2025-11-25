@@ -76,15 +76,18 @@ class FirebaseRepositorio {
         val ref = db.child(R_USUARIOS)
         val l = object: com.google.firebase.database.ValueEventListener {
             override fun onDataChange(s: com.google.firebase.database.DataSnapshot) {
-                trySend(s.children.mapNotNull { it.getValue(Usuario::class.java) })
+                val usuarios = s.children.mapNotNull {
+                    try {
+                        it.getValue(Usuario::class.java)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                trySend(usuarios)
             }
             override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
-                if (e.code == DatabaseError.PERMISSION_DENIED) {
-                    trySend(emptyList())
-                    close()
-                } else {
-                    close(e.toException())
-                }
+                // Evitamos crash cerrando sin excepción o enviando lista vacía
+                close()
             }
         }
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
@@ -94,16 +97,18 @@ class FirebaseRepositorio {
         val ref = db.child(R_USUARIOS)
         val l = object: com.google.firebase.database.ValueEventListener {
             override fun onDataChange(s: com.google.firebase.database.DataSnapshot) {
-                val lista = s.children.mapNotNull { it.getValue(Usuario::class.java) }.filter { it.rol == rol }
+                val lista = s.children.mapNotNull {
+                    try {
+                        it.getValue(Usuario::class.java)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }.filter { it.rol == rol }
                 trySend(FirebaseResultado.Exito(lista))
             }
             override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
-                if (e.code == DatabaseError.PERMISSION_DENIED) {
-                    trySend(FirebaseResultado.Error("No tienes permisos para ver los usuarios.", e.toException()))
-                    close() // cerramos sin propagar excepción para no crashear la UI
-                } else {
-                    close(e.toException())
-                }
+                trySend(FirebaseResultado.Error("Error al cargar usuarios: ${e.message}", e.toException()))
+                close()
             }
         }
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
@@ -114,15 +119,17 @@ class FirebaseRepositorio {
         val ref = db.child(R_ZONAS)
         val l = object: com.google.firebase.database.ValueEventListener {
             override fun onDataChange(s: com.google.firebase.database.DataSnapshot) {
-                trySend(s.children.mapNotNull { it.getValue(ZonaRiesgo::class.java) })
+                val zonas = s.children.mapNotNull {
+                    try {
+                        it.getValue(ZonaRiesgo::class.java)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                trySend(zonas)
             }
             override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
-                if (e.code == DatabaseError.PERMISSION_DENIED) {
-                    trySend(emptyList())
-                    close()
-                } else {
-                    close(e.toException())
-                }
+                close()
             }
         }
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
@@ -148,12 +155,8 @@ class FirebaseRepositorio {
                 trySend(FirebaseResultado.Exito(mapa))
             }
             override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
-                if (e.code == DatabaseError.PERMISSION_DENIED) {
-                    trySend(FirebaseResultado.Error("No tienes permisos para ver las posiciones.", e.toException()))
-                    close()
-                } else {
-                    close(e.toException())
-                }
+                trySend(FirebaseResultado.Error("Error al cargar posiciones: ${e.message}", e.toException()))
+                close()
             }
         }
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
@@ -172,11 +175,19 @@ class FirebaseRepositorio {
             override fun onDataChange(s: com.google.firebase.database.DataSnapshot) {
                 val lista = s.children
                     .filter { it.key != "participantes" }
-                    .mapNotNull { it.getValue(Mensaje::class.java) }
+                    .mapNotNull {
+                        try {
+                            it.getValue(Mensaje::class.java)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
                     .sortedBy { it.tiempo }
                 trySend(lista)
             }
-            override fun onCancelled(e: com.google.firebase.database.DatabaseError) { close(e.toException()) }
+            override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
+                close()
+            }
         }
         ref.addValueEventListener(l); awaitClose { ref.removeEventListener(l) }
     }
