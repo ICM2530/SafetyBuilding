@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,12 +21,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChatBubble
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Map
@@ -75,7 +81,6 @@ import com.safetyfirst.ui.sensors.rememberNoiseMeter
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.roundToInt
-import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun PantHomeObrero(nav: NavController, repo: FirebaseRepositorio = FirebaseRepositorio()) {
@@ -361,62 +366,133 @@ private fun HeaderSupervisorDashboard(nav: NavController, brandGreen: Color) {
 
 @Composable
 private fun StatisticCard(stat: DashboardStat, brandGreen: Color) {
-    val background = if (stat.highlight) Color(0xFFD5E6D4) else Color(0xFFE7EFE4)
+    val background = if (stat.highlight) 
+        androidx.compose.ui.graphics.Brush.verticalGradient(
+            colors = listOf(Color(0xFFD5E6D4), Color(0xFFE8F1E8))
+        ) 
+    else 
+        androidx.compose.ui.graphics.Brush.verticalGradient(
+            colors = listOf(Color(0xFFF0F5F0), Color(0xFFF8FBF8))
+        )
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = background),
-        shape = RoundedCornerShape(32.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (stat.highlight) 4.dp else 2.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(background)
+                .padding(vertical = 28.dp, horizontal = 20.dp)
         ) {
-            Text(
-                text = stat.value,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                color = brandGreen
-            )
-            Text(
-                text = stat.description,
-                fontSize = 16.sp,
-                color = Color.Black
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = stat.value,
+                        fontSize = 42.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = brandGreen
+                    )
+                    Text(
+                        text = stat.description,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF2D3D2D)
+                    )
+                }
+                if (stat.highlight) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(brandGreen.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CheckCircle,
+                            contentDescription = null,
+                            tint = brandGreen,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun WorkerDashboardHeader(usuario: Usuario?, brandGreen: Color, nav: NavController) {
-    Row(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FBF8)),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = if (!usuario?.nombre.isNullOrBlank()) "Hola, ${usuario?.nombre?.trim()}" else "Hola",
-                color = Color.Black,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "Mantén actualizada la información de tu frente de obra.",
-                color = Color(0xFF4A4A4A),
-                fontSize = 14.sp
-            )
-        }
-        IconButton(onClick = { nav.navigate(Rutas.Perfil.ruta) }) {
-            Icon(
-                imageVector = Icons.Outlined.Person,
-                contentDescription = "Ir a mi perfil",
-                tint = brandGreen,
-                modifier = Modifier.size(28.dp)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(brandGreen.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = usuario?.nombre?.firstOrNull()?.uppercase() ?: "O",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = brandGreen
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = if (!usuario?.nombre.isNullOrBlank()) "Hola, ${usuario.nombre?.trim()?.split(' ')?.firstOrNull() ?: usuario.nombre}" else "Hola, Obrero",
+                        color = Color.Black,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Mantén actualizada tu jornada",
+                        color = Color(0xFF6B7B69),
+                        fontSize = 13.sp
+                    )
+                }
+            }
+            IconButton(
+                onClick = { nav.navigate(Rutas.Perfil.ruta) },
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(brandGreen.copy(alpha = 0.1f))
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Person,
+                    contentDescription = "Ir a mi perfil",
+                    tint = brandGreen,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
@@ -430,14 +506,25 @@ private fun WorkerQuickActionsSection(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Acciones rápidas",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.Black
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(brandGreen)
+            )
+            Text(
+                text = "Acciones rápidas",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+        }
 
         actions.forEach { action ->
             WorkerQuickActionCard(action, brandGreen)
@@ -451,29 +538,35 @@ private fun WorkerQuickActionCard(action: WorkerQuickAction, brandGreen: Color) 
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = action.onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE7EFE4)),
-        shape = RoundedCornerShape(28.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                color = Color.White,
-                shape = RoundedCornerShape(18.dp)
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        androidx.compose.ui.graphics.Brush.linearGradient(
+                            colors = listOf(brandGreen.copy(alpha = 0.15f), brandGreen.copy(alpha = 0.25f))
+                        )
+                    ),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = action.icon,
                     contentDescription = null,
                     tint = brandGreen,
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .size(28.dp)
+                    modifier = Modifier.size(26.dp)
                 )
             }
+            Spacer(Modifier.width(16.dp))
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -481,19 +574,20 @@ private fun WorkerQuickActionCard(action: WorkerQuickAction, brandGreen: Color) 
                 Text(
                     text = action.title,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A1A1A)
                 )
                 Text(
                     text = action.description,
                     fontSize = 13.sp,
-                    color = Color(0xFF4A4A4A)
+                    color = Color(0xFF6B7B69),
+                    lineHeight = 18.sp
                 )
             }
             Icon(
-                imageVector = Icons.Outlined.ChevronRight,
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,
-                tint = brandGreen.copy(alpha = 0.7f)
+                tint = brandGreen.copy(alpha = 0.6f)
             )
         }
     }
