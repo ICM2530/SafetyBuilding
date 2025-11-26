@@ -167,10 +167,10 @@ fun PantChat(
             TopAppBar(
                 title = { Text("Chat") },
                 navigationIcon = {
-                    IconButton(onClick = { nav.popBackStack() }) {
+                    IconButton(onClick = { nav.navigate(AppScreens.HomeScreen.name) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = "Volver a Home"
                         )
                     }
                 }
@@ -203,10 +203,10 @@ fun PantChat(
         TopAppBar(
             title = { Text("Chat") },
             navigationIcon = {
-                IconButton(onClick = { nav.popBackStack() }) {
+                IconButton(onClick = { nav.navigate(AppScreens.HomeScreen.name) }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver"
+                        contentDescription = "Volver a Home"
                     )
                 }
             }
