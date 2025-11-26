@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import android.util.Log
 
 // ────────────────────────
 // Acceso a Firebase Auth + RTDB
@@ -198,5 +199,15 @@ class FirebaseRepositorio {
         conv.child("participantes").child(m.emisorUid).setValue(true).await()
         conv.child("participantes").child(m.receptorUid).setValue(true).await()
         conv.push().setValue(m).await()
+    }
+
+    fun guardarTokenFCM(uid: String, token: String) {
+        db.child(R_USUARIOS).child(uid).child("tokenFcm").setValue(token)
+            .addOnSuccessListener {
+                Log.d("FCM_Repo", "Token de FCM guardado/actualizado exitosamente para UID: $uid")
+            }
+            .addOnFailureListener { e ->
+                Log.e("FCM_Repo", "Error al guardar token de FCM para UID: $uid", e)
+            }
     }
 }
