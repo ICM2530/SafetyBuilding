@@ -61,6 +61,30 @@ class FirebaseRepositorio {
     suspend fun obtenerUsuario(uid: String): Usuario? =
         db.child(R_USUARIOS).child(uid).get().await().getValue(Usuario::class.java)
 
+    // Usuario actual como Flow, con rol y resto de campos
+    fun flujoUsuarioActual(): Flow<Usuario?> = callbackFlow {
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            trySend(null)
+            close()
+            return@callbackFlow
+        }
+
+        val ref = db.child(R_USUARIOS).child(uid)
+        val listener = object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                val usuario = snapshot.getValue(Usuario::class.java)
+                trySend(usuario)
+            }
+
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
     suspend fun guardarUsuario(u: Usuario) {
         db.child(R_USUARIOS).child(u.uid).setValue(u).await()
     }
