@@ -206,6 +206,7 @@ private fun UsuarioItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ConversacionScreen(
     usuario: Usuario,
