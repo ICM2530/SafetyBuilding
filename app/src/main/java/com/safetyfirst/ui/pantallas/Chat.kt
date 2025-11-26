@@ -49,11 +49,25 @@ fun PantUsuariosChatLista(nav: NavController, repo: FirebaseRepositorio = Fireba
     val yo = repo.usuarioActual()?.uid.orEmpty()
     val usuariosRemotos by repo.flujoUsuarios().collectAsState(initial = emptyList())
     val autenticado = yo.isNotBlank()
+    var tiempoEspera by remember { mutableStateOf(0) }
+    var mostrarError by remember { mutableStateOf(false) }
     
     // Debug logging
     LaunchedEffect(usuariosRemotos) {
+        Log.d("ChatDebug", "Yo: $yo, Autenticado: $autenticado")
         Log.d("ChatDebug", "Usuarios remotos: ${usuariosRemotos.size}")
         usuariosRemotos.forEach { Log.d("ChatDebug", "Usuario: ${it.nombre} - ${it.uid}") }
+    }
+    
+    // Timeout para detectar problemas de carga
+    LaunchedEffect(autenticado) {
+        if (autenticado) {
+            kotlinx.coroutines.delay(5000) // Esperar 5 segundos
+            if (usuariosRemotos.isEmpty()) {
+                mostrarError = true
+                Log.d("ChatDebug", "Timeout: No se cargaron usuarios de Firebase")
+            }
+        }
     }
     
     val usuarios = when {
@@ -63,7 +77,7 @@ fun PantUsuariosChatLista(nav: NavController, repo: FirebaseRepositorio = Fireba
     }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Mensajes") }) }) { p ->
-        if (autenticado && usuariosRemotos.isEmpty()) {
+        if (autenticado && usuariosRemotos.isEmpty() && !mostrarError) {
             // Mostrar loading mientras se cargan los usuarios
             Column(
                 modifier = Modifier
@@ -80,7 +94,23 @@ fun PantUsuariosChatLista(nav: NavController, repo: FirebaseRepositorio = Fireba
             }
         } else {
             LazyColumn(Modifier.padding(p)) {
-                if (usuarios.isEmpty()) {
+                if (mostrarError) {
+                    item {
+                        ListItem(
+                            headlineContent = { Text("Error al cargar usuarios") },
+                            supportingContent = { 
+                                Column {
+                                    Text("No se pudo conectar con Firebase. Verifica:")
+                                    Text("• Que tengas conexión a internet")
+                                    Text("• Que las reglas de Firebase permitan lectura")
+                                    Text("• Que tu usuario esté autenticado: ${if (autenticado) "SÍ" else "NO"}")
+                                    Text("• UID: $yo")
+                                }
+                            },
+                            leadingContent = { androidx.compose.material3.Icon(Icons.Filled.Person, contentDescription = null) }
+                        )
+                    }
+                } else if (usuarios.isEmpty()) {
                     item {
                         ListItem(
                             headlineContent = { Text("Aun no hay usuarios para conversar") },
