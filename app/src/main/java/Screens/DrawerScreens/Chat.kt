@@ -33,6 +33,8 @@ import com.safetyfirst.ui.pantallas.ChatViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun ChatScreen(
     navController: NavController,
@@ -50,7 +52,7 @@ fun ChatScreen(
                 usuarioSeleccionado = usuario
                 viewModel.iniciarConversacion(usuario.uid)
             },
-            bottomBarItems = bottomBarItems
+            navController = navController
         )
     } else {
         ConversacionScreen(
@@ -62,7 +64,7 @@ fun ChatScreen(
             onVolver = {
                 usuarioSeleccionado = null
             },
-            bottomBarItems = bottomBarItems
+            navController = navController
         )
     }
     
@@ -86,8 +88,9 @@ private fun ListaUsuariosScreen(
     usuarios: List<Usuario>,
     cargando: Boolean,
     onUsuarioClick: (Usuario) -> Unit,
-    bottomBarItems: List<Triple<String, @Composable () -> Unit, () -> Unit>>
+    navController: NavController
 ) {
+    val bottomBarItems = buildBottomItems(BottomDestination.Team, navController)
     Scaffold(
         containerColor = White,
         topBar = {
@@ -209,8 +212,9 @@ private fun ConversacionScreen(
     mensajes: List<Mensaje>,
     onEnviarMensaje: (String) -> Unit,
     onVolver: () -> Unit,
-    bottomBarItems: List<Triple<String, @Composable () -> Unit, () -> Unit>>
+    navController: NavController
 ) {
+    val bottomBarItems = buildBottomItems(BottomDestination.Team, navController)
     var nuevoMensaje by remember { mutableStateOf("") }
 
     Scaffold(
