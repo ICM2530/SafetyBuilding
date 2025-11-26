@@ -1,9 +1,11 @@
 package com.safetyfirst.ui
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -14,14 +16,29 @@ import com.safetyfirst.ui.tema.SafetyTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { SafetyTheme { AppRaiz() } }
+        setContent { SafetyTheme { AppRaiz(intent) } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Sobrescribimos el intent para que Compose lo reciba
+        setIntent(intent)
     }
 }
 
 @Composable
-fun AppRaiz() {
+fun AppRaiz(intent: Intent?) {
     val nav = rememberNavController()
+
+    LaunchedEffect(key1 = intent) {
+        if (intent?.action == Intent.ACTION_VIEW && intent.data != null) {
+            nav.handleDeepLink(intent)
+        }
+    }
+
     NavHost(navController = nav, startDestination = Rutas.Autenticacion.ruta) {
+        // El `handleDeepLink` se encarga de navegar a la ruta correcta, p.ej. "chat/some_user_id"
+        // por lo que no se necesita lógica adicional aquí.
         composable(Rutas.Autenticacion.ruta) { PantAutenticacion(nav) }
         composable(Rutas.Permisos.ruta) { PantPermisos(nav) }
         composable(Rutas.HomeObrero.ruta) { PantHomeObrero(nav) }
