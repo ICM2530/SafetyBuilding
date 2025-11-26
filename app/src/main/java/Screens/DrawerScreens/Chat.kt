@@ -1,5 +1,6 @@
 package com.example.main.Screens.DrawerScreens
 
+import Navigation.AppScreens
 import Navigation.BottomDestination
 import Navigation.buildBottomItems
 import androidx.compose.foundation.background
@@ -96,9 +97,9 @@ private fun ListaUsuariosScreen(
         topBar = {
             ReusableTopAppBar(
                 title = "Mensajes",
-                leadingIcon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
                 leadingContentDescription = "Volver a Home",
-                onLeadingClick = { navController.navigate(Navigation.AppScreens.HomeScreen.name) },
+                onLeadingClick = { navController.navigate(AppScreens.HomeScreen.name) },
                 trailingIcon = null,
                 showDivider = true
             )

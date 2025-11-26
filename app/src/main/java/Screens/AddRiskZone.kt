@@ -87,7 +87,7 @@ fun AddRiskZone(navController: NavController) {
         topBar = {
             ReusableTopAppBar(
                 title = "Reportar riesgo",
-                leadingIcon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
                 leadingContentDescription = "Volver a Home",
                 onLeadingClick = { navController.navigate(AppScreens.HomeScreen.name) },
                 trailingIcon = Icons.Outlined.Person,

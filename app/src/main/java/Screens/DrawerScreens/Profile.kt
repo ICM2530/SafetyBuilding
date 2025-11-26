@@ -66,7 +66,7 @@ fun ProfileScreen(navController: NavController) {
         topBar = {
             ReusableTopAppBar(
                 title = "Perfil",
-                leadingIcon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
                 leadingContentDescription = "Volver a Home",
                 onLeadingClick = { navController.navigate(AppScreens.HomeScreen.name) },
                 trailingIcon = Icons.Outlined.Edit,

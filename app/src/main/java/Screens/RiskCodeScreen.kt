@@ -52,7 +52,7 @@ fun RiskCodeScreen(controller: NavController) {
         topBar = {
             ReusableTopAppBar(
                 title = "Ingresar a la obra",
-                leadingIcon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
                 leadingContentDescription = "Volver a Home",
                 onLeadingClick = { controller.navigate(AppScreens.HomeScreen.name) },
                 trailingIcon = null,
