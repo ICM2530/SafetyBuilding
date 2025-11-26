@@ -2,6 +2,7 @@
 
 package com.safetyfirst.ui.pantallas
 
+import Navigation.AppScreens
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,12 +12,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -76,7 +79,19 @@ fun PantUsuariosChatLista(nav: NavController, repo: FirebaseRepositorio = Fireba
         else -> MockInMemory.usuariosExcept(yo)
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Mensajes") }) }) { p ->
+    Scaffold(topBar = { 
+        TopAppBar(
+            title = { Text("Mensajes") },
+            navigationIcon = {
+                IconButton(onClick = { nav.navigate(AppScreens.HomeScreen.name) }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver a Home"
+                    )
+                }
+            }
+        )
+    }) { p ->
         if (autenticado && usuariosRemotos.isEmpty() && !mostrarError) {
             // Mostrar loading mientras se cargan los usuarios
             Column(
@@ -148,7 +163,19 @@ fun PantChat(
     val autenticado = yo.isNotBlank()
 
     if (!autenticado || uidOtro.isBlank()) {
-        Scaffold(topBar = { TopAppBar(title = { Text("Chat") }) }) { p ->
+        Scaffold(topBar = { 
+            TopAppBar(
+                title = { Text("Chat") },
+                navigationIcon = {
+                    IconButton(onClick = { nav.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver"
+                        )
+                    }
+                }
+            )
+        }) { p ->
             Column(
                 modifier = Modifier
                     .padding(p)
@@ -172,7 +199,19 @@ fun PantChat(
     var enviando by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Chat") }) }) { p ->
+    Scaffold(topBar = { 
+        TopAppBar(
+            title = { Text("Chat") },
+            navigationIcon = {
+                IconButton(onClick = { nav.popBackStack() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver"
+                    )
+                }
+            }
+        )
+    }) { p ->
         Column(
             modifier = Modifier
                 .padding(p)
