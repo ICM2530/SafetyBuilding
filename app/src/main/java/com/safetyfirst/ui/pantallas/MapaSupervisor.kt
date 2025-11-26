@@ -1,6 +1,7 @@
 package com.safetyfirst.ui.pantallas
 
 import android.annotation.SuppressLint
+import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,7 +53,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.safetyfirst.datos.FirebaseResultado
 import com.safetyfirst.datos.FirebaseRepositorio
+import com.safetyfirst.modelo.Usuario
+import com.safetyfirst.modelo.Rol
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.produceState
 import androidx.core.content.ContextCompat
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -70,6 +74,14 @@ fun PantMapaSupervisor(nav: NavController, repo: FirebaseRepositorio = FirebaseR
     val selectedDestination = remember { mutableStateOf<ObraDestination?>(null) }
     val routeResult = remember { mutableStateOf<RouteResult?>(null) }
     val currentUserUid = remember { repo.usuarioActual()?.uid }
+    
+    val currentUser by produceState<Usuario?>(initialValue = null, currentUserUid) {
+        value = currentUserUid?.let { repo.obtenerUsuario(it) }
+    }
+    
+    val allUsers by produceState<List<Usuario>>(initialValue = emptyList()) {
+        value = repo.obtenerTodosUsuarios()
+    }
 
     val mapView = rememberMapViewWithLifecycle()
 
@@ -122,12 +134,44 @@ fun PantMapaSupervisor(nav: NavController, repo: FirebaseRepositorio = FirebaseR
             mapView.overlays.add(hazardMarker)
         }
 
-        posiciones?.values?.forEach { pos ->
-            val marker = Marker(mapView).apply {
-                position = GeoPoint(pos.lat, pos.lon)
-                title = if (pos.uid == currentUserUid) "Tu ubicación" else pos.uid
+        // Mostrar marcadores según el rol del usuario
+        if (currentUser?.rol == Rol.SUPERVISOR) {
+            // El supervisor ve a todos los usuarios
+            posiciones?.values?.forEach { pos ->
+                val usuario = allUsers.find { it.uid == pos.uid }
+                val marker = Marker(mapView).apply {
+                    position = GeoPoint(pos.lat, pos.lon)
+                    title = if (pos.uid == currentUserUid) {
+                        "Tu ubicación (Supervisor)"
+                    } else {
+                        usuario?.nombre ?: pos.uid
+                    }
+                    snippet = when {
+                        pos.uid == currentUserUid -> "Lat: ${"%+.5f".format(pos.lat)}, Lon: ${"%+.5f".format(pos.lon)}"
+                        usuario != null -> "${usuario.rol} - Lat: ${"%+.5f".format(pos.lat)}, Lon: ${"%+.5f".format(pos.lon)}"
+                        else -> "Lat: ${"%+.5f".format(pos.lat)}, Lon: ${"%+.5f".format(pos.lon)}"
+                    }
+                    icon = if (pos.uid == currentUserUid) {
+                        ContextCompat.getDrawable(mapView.context, android.R.drawable.ic_menu_mylocation)
+                    } else if (usuario?.rol == Rol.SUPERVISOR) {
+                        ContextCompat.getDrawable(mapView.context, android.R.drawable.ic_menu_compass)
+                    } else {
+                        ContextCompat.getDrawable(mapView.context, android.R.drawable.ic_menu_myplaces)
+                    }
+                }
+                mapView.overlays.add(marker)
             }
-            mapView.overlays.add(marker)
+        } else {
+            // El obrero solo ve su propia ubicación
+            posiciones?.get(currentUserUid ?: "")?.let { pos ->
+                val marker = Marker(mapView).apply {
+                    position = GeoPoint(pos.lat, pos.lon)
+                    title = "Tu ubicación (${currentUser?.nombre ?: "Obrero"})"
+                    snippet = "Lat: ${"%+.5f".format(pos.lat)}, Lon: ${"%+.5f".format(pos.lon)}"
+                    icon = ContextCompat.getDrawable(mapView.context, android.R.drawable.ic_menu_mylocation)
+                }
+                mapView.overlays.add(marker)
+            }
         }
 
         routeResult.value?.let { ruta ->

@@ -61,6 +61,17 @@ class FirebaseRepositorio {
 
     suspend fun obtenerUsuario(uid: String): Usuario? =
         db.child(R_USUARIOS).child(uid).get().await().getValue(Usuario::class.java)
+    
+    suspend fun obtenerTodosUsuarios(): List<Usuario> {
+        return try {
+            db.child(R_USUARIOS).get().await().children.mapNotNull { 
+                it.getValue(Usuario::class.java)
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseRepo", "Error obteniendo todos los usuarios: ${e.message}")
+            emptyList()
+        }
+    }
 
     suspend fun guardarUsuario(u: Usuario) {
         db.child(R_USUARIOS).child(u.uid).setValue(u).await()
