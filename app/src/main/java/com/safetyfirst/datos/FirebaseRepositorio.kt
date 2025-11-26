@@ -74,12 +74,24 @@ class FirebaseRepositorio {
     // —— Usuarios
     fun flujoUsuarios(): Flow<List<Usuario>> = callbackFlow {
         val ref = db.child(R_USUARIOS)
+        android.util.Log.d("FirebaseRepo", "Iniciando listener para usuarios en: ${ref.toString()}")
+        android.util.Log.d("FirebaseRepo", "Usuario actual: ${auth.currentUser?.uid}")
+        
         val l = object: com.google.firebase.database.ValueEventListener {
             override fun onDataChange(s: com.google.firebase.database.DataSnapshot) {
-                trySend(s.children.mapNotNull { it.getValue(Usuario::class.java) })
+                android.util.Log.d("FirebaseRepo", "onDataChange - Snapshot existe: ${s.exists()}, Hijos: ${s.childrenCount}")
+                val usuarios = s.children.mapNotNull { 
+                    val usuario = it.getValue(Usuario::class.java)
+                    android.util.Log.d("FirebaseRepo", "Usuario cargado: ${usuario?.nombre} (${usuario?.uid})")
+                    usuario
+                }
+                android.util.Log.d("FirebaseRepo", "Total usuarios a enviar: ${usuarios.size}")
+                trySend(usuarios)
             }
             override fun onCancelled(e: com.google.firebase.database.DatabaseError) {
+                android.util.Log.e("FirebaseRepo", "Error en flujoUsuarios: ${e.message}, Code: ${e.code}")
                 if (e.code == DatabaseError.PERMISSION_DENIED) {
+                    android.util.Log.e("FirebaseRepo", "PERMISSION_DENIED - Verifica las reglas de Firebase")
                     trySend(emptyList())
                     close()
                 } else {
