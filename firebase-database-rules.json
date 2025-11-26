@@ -1,0 +1,49 @@
+{
+  "rules": {
+    "usuarios": {
+      // IMPORTANTE: Permitir leer la lista completa de usuarios para el chat
+      ".read": "auth != null",
+      "$uid": {
+        // El propio usuario o un SUPERVISOR puede leer/escribir el perfil
+        ".read": "$uid === auth.uid || root.child('usuarios').child(auth.uid).child('rol').val() === 'SUPERVISOR'",
+        ".write": "$uid === auth.uid || root.child('usuarios').child(auth.uid).child('rol').val() === 'SUPERVISOR'"
+      }
+    },
+
+    "posiciones": {
+      // El supervisor puede leer el CONJUNTO /posiciones
+      ".read": "root.child('usuarios').child(auth.uid).child('rol').val() === 'SUPERVISOR'",
+
+      "$uid": {
+        // Por si alguna pantalla lee directamente /posiciones/$uid
+        ".read": "$uid === auth.uid || root.child('usuarios').child(auth.uid).child('rol').val() === 'SUPERVISOR'",
+        // Cada usuario solo escribe su propia posición
+        ".write": "$uid === auth.uid"
+      }
+    },
+
+    "zonas": {
+      ".read": "auth != null",
+      // Solo SUPERVISOR crea/edita zonas
+      ".write": "root.child('usuarios').child(auth.uid).child('rol').val() === 'SUPERVISOR'"
+    },
+
+    "mensajes": {
+      "$conversacionId": {
+        // Permitir leer si eres participante O si intentas crear la conversación
+        ".read": "auth != null && (data.child('participantes').child(auth.uid).val() === true || !data.exists())",
+        // Permitir escribir si eres participante o si estás iniciando la conversación
+        ".write": "auth != null && (data.child('participantes').child(auth.uid).val() === true || newData.child('participantes').child(auth.uid).val() === true)",
+
+        // Validación de participantes (true/false)
+        "participantes": {
+          "$uid": { ".validate": "newData.val() === true" }
+        }
+      }
+    },
+
+    // Bloqueo por defecto
+    ".read": false,
+    ".write": false
+  }
+}

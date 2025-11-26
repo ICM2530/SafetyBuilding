@@ -3,74 +3,103 @@ package com.example.main.Screens.DrawerScreens
 import Navigation.BottomDestination
 import Navigation.buildBottomItems
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Send
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.main.CompReusable.ReusableTextField
 import com.example.main.CompReusable.ReusableTopAppBar
 import com.example.main.CompReusable.SafetyBottomBar
-import com.example.main.utils.theme.SafetyGreenPrimary
-import com.example.main.utils.theme.SafetySurface
-import com.example.main.utils.theme.SafetySurfaceAlt
-import com.example.main.utils.theme.SafetyTextPrimary
-import com.example.main.utils.theme.SafetyTextSecondary
-import com.example.main.utils.theme.White
+import com.example.main.utils.theme.*
+import com.safetyfirst.modelo.Mensaje
+import com.safetyfirst.modelo.Usuario
+import com.safetyfirst.ui.pantallas.ChatViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
-private data class Message(
-    val author: String,
-    val text: String,
-    val isUser: Boolean,
-    val time: String
-)
+@OptIn(ExperimentalMaterial3Api::class)
 
 @Composable
-fun ChatScreen(navController: NavController) {
+fun ChatScreen(
+    navController: NavController,
+    viewModel: ChatViewModel = viewModel()
+) {
     val bottomBarItems = buildBottomItems(BottomDestination.Team, navController)
-    val messages = listOf(
-        Message("Coordinación", "Recibimos la alerta eléctrica. El equipo de mantenimiento está en camino.", false, "08:45"),
-        Message("Tú", "Perfecto, ya acordonamos la zona y detenemos el acceso.", true, "08:47"),
-        Message("Coordinación", "Recuerden registrar fotografías de la intervención para el informe.", false, "08:48"),
-        Message("Tú", "Las cargamos en cuanto finalice la inspección.", true, "08:50")
-    )
-    var newMessage by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsState()
+    var usuarioSeleccionado by remember { mutableStateOf<Usuario?>(null) }
 
+    if (usuarioSeleccionado == null) {
+        ListaUsuariosScreen(
+            usuarios = uiState.usuarios,
+            cargando = uiState.cargando,
+            onUsuarioClick = { usuario ->
+                usuarioSeleccionado = usuario
+                viewModel.iniciarConversacion(usuario.uid)
+            },
+            navController = navController
+        )
+    } else {
+        ConversacionScreen(
+            usuario = usuarioSeleccionado!!,
+            mensajes = uiState.mensajes,
+            onEnviarMensaje = { texto ->
+                viewModel.enviarMensaje(texto, usuarioSeleccionado!!.uid)
+            },
+            onVolver = {
+                usuarioSeleccionado = null
+            },
+            navController = navController
+        )
+    }
+    
+    // Mostrar error si existe
+    uiState.error?.let { error ->
+        LaunchedEffect(error) {
+            kotlinx.coroutines.delay(3000)
+            viewModel.limpiarError()
+        }
+        Snackbar(
+            modifier = Modifier.padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.error
+        ) {
+            Text(error)
+        }
+    }
+}
+
+@Composable
+private fun ListaUsuariosScreen(
+    usuarios: List<Usuario>,
+    cargando: Boolean,
+    onUsuarioClick: (Usuario) -> Unit,
+    navController: NavController
+) {
+    val bottomBarItems = buildBottomItems(BottomDestination.Team, navController)
     Scaffold(
         containerColor = White,
         topBar = {
             ReusableTopAppBar(
                 title = "Mensajes",
-                trailingIcon = Icons.Outlined.ChatBubbleOutline,
-                trailingContentDescription = "Nuevo chat",
-                onTrailingClick = { /* TODO iniciar chat */ },
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
+                leadingContentDescription = "Volver",
+                onLeadingClick = { navController.popBackStack() },
+                trailingIcon = null,
                 showDivider = true
             )
         },
@@ -81,34 +110,208 @@ fun ChatScreen(navController: NavController) {
                 .padding(innerPadding)
                 .fillMaxSize()
                 .background(White)
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SafetySurfaceAlt),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            if (cargando) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = SafetyGreenPrimary)
+                }
+            } else if (usuarios.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No hay usuarios disponibles",
+                        style = TextStyle(
+                            color = SafetyTextSecondary,
+                            fontSize = 16.sp
+                        )
+                    )
+                }
+            } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 18.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(messages) { message ->
-                        MessageBubble(message = message)
+                    items(usuarios) { usuario ->
+                        UsuarioItem(
+                            usuario = usuario,
+                            onClick = { onUsuarioClick(usuario) }
+                        )
                     }
                 }
             }
+        }
+    }
+}
 
+@Composable
+private fun UsuarioItem(
+    usuario: Usuario,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = SafetySurfaceAlt),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Avatar
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+                    .background(SafetyGreenPrimary),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = usuario.nombre.firstOrNull()?.uppercase() ?: "?",
+                    style = TextStyle(
+                        color = White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
+            
+            // Info usuario
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = usuario.nombre,
+                    style = TextStyle(
+                        color = SafetyTextPrimary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+                Text(
+                    text = usuario.rol.name,
+                    style = TextStyle(
+                        color = SafetyTextSecondary,
+                        fontSize = 14.sp
+                    )
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ConversacionScreen(
+    usuario: Usuario,
+    mensajes: List<Mensaje>,
+    onEnviarMensaje: (String) -> Unit,
+    onVolver: () -> Unit,
+    navController: NavController
+) {
+    val bottomBarItems = buildBottomItems(BottomDestination.Team, navController)
+    var nuevoMensaje by remember { mutableStateOf("") }
+
+    Scaffold(
+        containerColor = White,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(SafetyGreenPrimary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = usuario.nombre.firstOrNull()?.uppercase() ?: "?",
+                                style = TextStyle(
+                                    color = White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = usuario.nombre,
+                                style = TextStyle(
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                            Text(
+                                text = usuario.rol.name,
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    color = SafetyTextSecondary
+                                )
+                            )
+                        }
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onVolver) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+            )
+        },
+        bottomBar = { SafetyBottomBar(items = bottomBarItems) }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .background(White)
+        ) {
+            // Lista de mensajes
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(mensajes) { mensaje ->
+                    MessageBubble(
+                        mensaje = mensaje,
+                        nombreReceptor = usuario.nombre
+                    )
+                }
+            }
+
+            // Campo de entrada
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 ReusableTextField(
                     contenido = "Escribe un mensaje",
-                    value = newMessage,
-                    onValueChange = { newMessage = it },
+                    value = nuevoMensaje,
+                    onValueChange = { nuevoMensaje = it },
                     modifier = Modifier.weight(1f)
                 )
                 Card(
@@ -117,8 +320,10 @@ fun ChatScreen(navController: NavController) {
                 ) {
                     IconButton(
                         onClick = {
-                            // TODO enviar mensaje
-                            newMessage = ""
+                            if (nuevoMensaje.isNotBlank()) {
+                                onEnviarMensaje(nuevoMensaje)
+                                nuevoMensaje = ""
+                            }
                         }
                     ) {
                         Icon(
@@ -134,13 +339,20 @@ fun ChatScreen(navController: NavController) {
 }
 
 @Composable
-private fun MessageBubble(message: Message) {
+private fun MessageBubble(
+    mensaje: Mensaje,
+    nombreReceptor: String
+) {
+    val esPropio = mensaje.emisorUid == com.safetyfirst.datos.FirebaseRepositorio().usuarioActual()?.uid
+    val formato = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val hora = formato.format(Date(mensaje.tiempo))
+    
     Column(
-        horizontalAlignment = if (message.isUser) Alignment.End else Alignment.Start,
+        horizontalAlignment = if (esPropio) Alignment.End else Alignment.Start,
         modifier = Modifier.fillMaxWidth()
     ) {
         Card(
-            colors = if (message.isUser) {
+            colors = if (esPropio) {
                 CardDefaults.cardColors(containerColor = SafetyGreenPrimary)
             } else {
                 CardDefaults.cardColors(containerColor = SafetySurface)
@@ -148,15 +360,15 @@ private fun MessageBubble(message: Message) {
             shape = RoundedCornerShape(20.dp),
             modifier = Modifier
                 .fillMaxWidth(0.85f)
-                .align(if (message.isUser) Alignment.End else Alignment.Start)
+                .align(if (esPropio) Alignment.End else Alignment.Start)
         ) {
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (!message.isUser) {
+                if (!esPropio) {
                     Text(
-                        text = message.author,
+                        text = nombreReceptor,
                         style = TextStyle(
                             color = SafetyTextPrimary,
                             fontSize = 13.sp,
@@ -165,9 +377,9 @@ private fun MessageBubble(message: Message) {
                     )
                 }
                 Text(
-                    text = message.text,
+                    text = mensaje.texto,
                     style = TextStyle(
-                        color = if (message.isUser) White else SafetyTextSecondary,
+                        color = if (esPropio) White else SafetyTextSecondary,
                         fontSize = 14.sp
                     )
                 )
@@ -175,7 +387,7 @@ private fun MessageBubble(message: Message) {
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            text = message.time,
+            text = hora,
             style = TextStyle(
                 color = SafetyTextSecondary,
                 fontSize = 12.sp

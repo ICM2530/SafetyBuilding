@@ -1,6 +1,5 @@
 package com.example.main.Screens.DrawerScreens
 
-import Navigation.AppScreens
 import Navigation.BottomDestination
 import Navigation.buildBottomItems
 import androidx.compose.foundation.background
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Lock
@@ -65,6 +65,9 @@ fun ProfileScreen(navController: NavController) {
         topBar = {
             ReusableTopAppBar(
                 title = "Perfil",
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
+                leadingContentDescription = "Volver",
+                onLeadingClick = { navController.popBackStack() },
                 trailingIcon = Icons.Outlined.Edit,
                 trailingContentDescription = "Editar información",
                 onTrailingClick = { /* TODO: editar datos */ },
@@ -141,7 +144,7 @@ fun ProfileScreen(navController: NavController) {
 
             ReusableButton(
                 label = "Actualizar contraseña",
-                onClick = { navController.navigate(AppScreens.ChangePassWordScreen.name) },
+                onClick = { /* TODO: navegar a cambiar contraseña */ },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -173,7 +176,7 @@ fun ProfileScreen(navController: NavController) {
                         )
                     }
                     IconButton(onClick = {
-                        navController.navigate(AppScreens.LogInScreen.name)
+                        /* TODO: implementar cierre de sesión */
                     }) {
                         Icon(
                             imageVector = Icons.Outlined.Lock,

@@ -1,5 +1,6 @@
 package com.example.main.Screens.DrawerScreens
 
+import Navigation.AppScreens
 import Navigation.BottomDestination
 import Navigation.buildBottomItems
 import androidx.compose.foundation.background
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -78,6 +80,9 @@ fun RiskZones(navController: NavController) {
         topBar = {
             ReusableTopAppBar(
                 title = "Mapa de riesgos",
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
+                leadingContentDescription = "Volver a Home",
+                onLeadingClick = { navController.navigate(AppScreens.HomeScreen.name) },
                 trailingIcon = Icons.Outlined.Map,
                 trailingContentDescription = "Vista general",
                 onTrailingClick = { /* TODO filtros */ },
