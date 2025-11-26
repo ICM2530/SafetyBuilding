@@ -1,6 +1,5 @@
 package com.safetyfirst.ui.pantallas
 
-import Navigation.AppScreens
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -149,8 +148,8 @@ fun PantMapaSupervisor(nav: NavController, repo: FirebaseRepositorio = FirebaseR
             ReusableTopAppBar(
                 title = "Mapa",
                 leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
-                leadingContentDescription = "Volver a Home",
-                onLeadingClick = { nav.navigate(AppScreens.HomeScreen.name) },
+                leadingContentDescription = "Volver",
+                onLeadingClick = { nav.popBackStack() },
                 trailingIcon = null,
                 showDivider = true
             )

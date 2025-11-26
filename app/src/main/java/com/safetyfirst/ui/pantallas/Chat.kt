@@ -2,7 +2,6 @@
 
 package com.safetyfirst.ui.pantallas
 
-import Navigation.AppScreens
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -83,10 +82,13 @@ fun PantUsuariosChatLista(nav: NavController, repo: FirebaseRepositorio = Fireba
         TopAppBar(
             title = { Text("Mensajes") },
             navigationIcon = {
-                IconButton(onClick = { nav.navigate(AppScreens.HomeScreen.name) }) {
+                IconButton(onClick = { 
+                    // Navegar a la pantalla anterior o home según el rol
+                    nav.popBackStack()
+                }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver a Home"
+                        contentDescription = "Volver"
                     )
                 }
             }
@@ -167,10 +169,10 @@ fun PantChat(
             TopAppBar(
                 title = { Text("Chat") },
                 navigationIcon = {
-                    IconButton(onClick = { nav.navigate(AppScreens.HomeScreen.name) }) {
+                    IconButton(onClick = { nav.popBackStack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver a Home"
+                            contentDescription = "Volver"
                         )
                     }
                 }
@@ -203,10 +205,10 @@ fun PantChat(
         TopAppBar(
             title = { Text("Chat") },
             navigationIcon = {
-                IconButton(onClick = { nav.navigate(AppScreens.HomeScreen.name) }) {
+                IconButton(onClick = { nav.popBackStack() }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver a Home"
+                        contentDescription = "Volver"
                     )
                 }
             }
