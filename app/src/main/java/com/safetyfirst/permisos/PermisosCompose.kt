@@ -28,6 +28,8 @@ import androidx.navigation.NavController
 import com.safetyfirst.datos.FirebaseRepositorio
 import com.safetyfirst.modelo.Rol
 import com.safetyfirst.ui.Rutas
+import com.safetyfirst.ubicacion.UbicacionVM
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
 private fun permisoConcedido(permiso: String, actividad: Activity): Boolean =
@@ -38,6 +40,7 @@ fun PantPermisos(nav: NavController, repo: FirebaseRepositorio = FirebaseReposit
     val activity = LocalContext.current as Activity
     val scope = rememberCoroutineScope()
     val brandGreen = Color(0xFF0B5F2A)
+    val ubicacionVM: UbicacionVM = viewModel()
 
     var locFinaOk by remember { mutableStateOf(permisoConcedido(Manifest.permission.ACCESS_FINE_LOCATION, activity)) }
     var locGruesaOk by remember { mutableStateOf(permisoConcedido(Manifest.permission.ACCESS_COARSE_LOCATION, activity)) }
@@ -70,6 +73,9 @@ fun PantPermisos(nav: NavController, repo: FirebaseRepositorio = FirebaseReposit
         if (todosConcedidos) {
             val uid = repo.usuarioActual()?.uid
             if (uid != null) {
+                // Iniciar rastreo de ubicación AQUÍ, después de tener los permisos
+                ubicacionVM.empezarRastreo(uid)
+                
                 val usuario = repo.obtenerUsuario(uid)
                 when (usuario?.rol) {
                     Rol.SUPERVISOR -> nav.navigate(Rutas.HomeSupervisor.ruta) { popUpTo(Rutas.Permisos.ruta) { inclusive = true } }

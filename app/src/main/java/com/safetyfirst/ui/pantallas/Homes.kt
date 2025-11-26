@@ -78,8 +78,6 @@ import com.safetyfirst.ui.sensors.NoiseMeter
 import com.safetyfirst.ui.sensors.rememberAltitudeMeters
 import com.safetyfirst.ui.sensors.rememberFallDetector
 import com.safetyfirst.ui.sensors.rememberNoiseMeter
-import com.safetyfirst.ubicacion.UbicacionVM
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -100,18 +98,6 @@ fun PantHomeObrero(nav: NavController, repo: FirebaseRepositorio = FirebaseRepos
     var showNoiseDialog by remember { mutableStateOf(false) }
     var fallAlert by remember { mutableStateOf(false) }
     val altitude by rememberAltitudeMeters()
-    val ubicacionVM: UbicacionVM = viewModel()
-
-    // Iniciar rastreo de ubicación automáticamente
-    LaunchedEffect(currentUid) {
-        if (currentUid != null && ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            ubicacionVM.empezarRastreo(currentUid)
-        }
-    }
 
     rememberFallDetector {
         fallAlert = true
@@ -264,20 +250,6 @@ fun PantHomeObrero(nav: NavController, repo: FirebaseRepositorio = FirebaseRepos
 fun PantHomeSupervisor(nav: NavController, repo: FirebaseRepositorio = FirebaseRepositorio()) {
     val brandGreen = Color(0xFF0B5F2A)
     val zonas by repo.flujoZonas().collectAsState(initial = emptyList())
-    val context = LocalContext.current
-    val currentUid = repo.usuarioActual()?.uid
-    val ubicacionVM: UbicacionVM = viewModel()
-
-    // Iniciar rastreo de ubicación automáticamente para supervisor
-    LaunchedEffect(currentUid) {
-        if (currentUid != null && ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            ubicacionVM.empezarRastreo(currentUid)
-        }
-    }
 
     val totalReportados = zonas.size
     val conTipos = zonas.count { it.tipos.isNotEmpty() }
