@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -86,6 +87,9 @@ fun AddRiskZone(navController: NavController) {
         topBar = {
             ReusableTopAppBar(
                 title = "Reportar riesgo",
+                leadingIcon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                leadingContentDescription = "Volver a Home",
+                onLeadingClick = { navController.navigate(AppScreens.HomeScreen.name) },
                 trailingIcon = Icons.Outlined.Person,
                 onTrailingClick = { navController.navigate(AppScreens.ProfileScreen.name) },
                 showDivider = true

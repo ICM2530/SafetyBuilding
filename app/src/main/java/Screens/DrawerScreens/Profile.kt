@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Lock
@@ -65,6 +66,9 @@ fun ProfileScreen(navController: NavController) {
         topBar = {
             ReusableTopAppBar(
                 title = "Perfil",
+                leadingIcon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                leadingContentDescription = "Volver a Home",
+                onLeadingClick = { navController.navigate(AppScreens.HomeScreen.name) },
                 trailingIcon = Icons.Outlined.Edit,
                 trailingContentDescription = "Editar información",
                 onTrailingClick = { /* TODO: editar datos */ },

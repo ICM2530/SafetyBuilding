@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -51,6 +52,9 @@ fun RiskCodeScreen(controller: NavController) {
         topBar = {
             ReusableTopAppBar(
                 title = "Ingresar a la obra",
+                leadingIcon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                leadingContentDescription = "Volver a Home",
+                onLeadingClick = { controller.navigate(AppScreens.HomeScreen.name) },
                 trailingIcon = null,
                 showDivider = true
             )

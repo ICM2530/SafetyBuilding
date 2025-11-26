@@ -96,6 +96,10 @@ private fun ListaUsuariosScreen(
         topBar = {
             ReusableTopAppBar(
                 title = "Mensajes",
+                leadingIcon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                leadingContentDescription = "Volver a Home",
+                onLeadingClick = { navController.navigate(Navigation.AppScreens.HomeScreen.name) },
+                trailingIcon = null,
                 showDivider = true
             )
         },
