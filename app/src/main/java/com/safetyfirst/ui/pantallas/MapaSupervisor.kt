@@ -1,5 +1,6 @@
 package com.safetyfirst.ui.pantallas
 
+import Navigation.AppScreens
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.Search
@@ -26,9 +28,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import com.example.main.CompReusable.ReusableTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -140,16 +144,32 @@ fun PantMapaSupervisor(nav: NavController, repo: FirebaseRepositorio = FirebaseR
         mapView.invalidate()
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .background(Color.White.copy(alpha = 0.85f), shape = MaterialTheme.shapes.medium)
-                .padding(16.dp)
+    Scaffold(
+        topBar = {
+            ReusableTopAppBar(
+                title = "Mapa",
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
+                leadingContentDescription = "Volver a Home",
+                onLeadingClick = { nav.navigate(AppScreens.HomeScreen.name) },
+                trailingIcon = null,
+                showDivider = true
+            )
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { innerPadding ->
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
         ) {
+            AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .background(Color.White.copy(alpha = 0.85f), shape = MaterialTheme.shapes.medium)
+                    .padding(16.dp)
+            ) {
             OutlinedTextField(
                 value = searchQuery.value,
                 onValueChange = {
@@ -237,10 +257,7 @@ fun PantMapaSupervisor(nav: NavController, repo: FirebaseRepositorio = FirebaseR
             }
         }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
-        )
+        }
     }
 }
 
