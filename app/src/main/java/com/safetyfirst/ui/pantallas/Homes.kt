@@ -67,6 +67,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetyfirst.ubicacion.UbicacionVM
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -98,6 +100,42 @@ fun PantHomeObrero(nav: NavController, repo: FirebaseRepositorio = FirebaseRepos
     var showNoiseDialog by remember { mutableStateOf(false) }
     var fallAlert by remember { mutableStateOf(false) }
     val altitude by rememberAltitudeMeters()
+
+    //  Enviar ubicación del obrero a Firebase para que el supervisor lo vea en el mapa
+    val ubicacionVM: UbicacionVM = viewModel()
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            currentUid?.let { uid ->
+                ubicacionVM.empezarRastreo(uid)
+            }
+        } else {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(
+                    "Se necesita acceso a la ubicación para reportar tu posición al supervisor."
+                )
+            }
+        }
+    }
+
+    LaunchedEffect(currentUid) {
+        currentUid?.let { uid ->
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                // Ya tiene permiso → empieza a mandar posiciones a /posiciones/{uid}
+                ubicacionVM.empezarRastreo(uid)
+            } else {
+                // Pide el permiso de ubicación
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }
+    }
+
 
     rememberFallDetector {
         fallAlert = true

@@ -22,10 +22,14 @@ data class ObraDestination(
 )
 
 private val blueprintPolygonPoints = listOf(
-    GeoPoint(4.64890, -74.24820),
-    GeoPoint(4.64920, -74.24720),
-    GeoPoint(4.64810, -74.24670),
-    GeoPoint(4.64770, -74.24760)
+    // Noroeste: cerca a los cerros / Parque Nacional
+    GeoPoint(4.6320, -74.0670),
+    // Noreste: hacia la Séptima, parte alta del campus
+    GeoPoint(4.6320, -74.0600),
+    // Sureste: zona sur-oriente del campus
+    GeoPoint(4.6250, -74.0600),
+    // Suroeste: zona sur-occidente, hacia el Parque Nacional
+    GeoPoint(4.6250, -74.0670)
 )
 
 private val obraGraph: Map<String, GraphNode> = listOf(
@@ -102,10 +106,15 @@ val obraDestinations: List<ObraDestination> = obraGraph.values
     }
 
 fun MapView.addBlueprintOverlay() {
-    val polygon = Polygon().apply {
-        setPoints(ArrayList(blueprintPolygonPoints))
-        fillColor = 0x22A2D2FF
-        outlinePaint.color = 0xFF2F7AFF.toInt()
+    val polygon = Polygon(this).apply {
+        // puntos del polígono
+        points = ArrayList(blueprintPolygonPoints)
+
+        // relleno semitransparente (ARGB)
+        fillColor = 0x55C8E6C9.toInt()   // verde muy claro con alpha
+
+        // borde más visible
+        outlinePaint.color = 0xFF2E7D32.toInt()
         outlinePaint.strokeWidth = 4f
     }
     overlays.add(polygon)
@@ -248,6 +257,28 @@ private fun distanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Doubl
     val endLat = Math.toRadians(lat2)
     val a = sin(dLat / 2).pow(2) + cos(startLat) * cos(endLat) * sin(dLon / 2).pow(2)
     return 2 * earthRadius * atan2(sqrt(a), sqrt(1 - a))
+}
+
+fun calculateSafeRouteToPoint(
+    start: GeoPoint,
+    target: GeoPoint,
+    zonasRiesgo: List<ZonaRiesgo>
+): RouteResult? {
+    val nodes = obraGraph
+
+    // Nodo más cercano al supervisor (inicio)
+    val startNode = nodes.values
+        .filterNot { it.inHazard(zonasRiesgo) }
+        .minByOrNull { distanceMeters(start, it.point) }
+        ?: return null
+
+    // Nodo más cercano al obrero (destino)
+    val destNode = nodes.values
+        .filterNot { it.inHazard(zonasRiesgo) }
+        .minByOrNull { distanceMeters(target, it.point) }
+        ?: return null
+
+    return calculateSafeRoute(start, destNode.id, zonasRiesgo)
 }
 
 private fun distancePointToSegmentMeters(point: GeoPoint, a: GeoPoint, b: GeoPoint): Double {
