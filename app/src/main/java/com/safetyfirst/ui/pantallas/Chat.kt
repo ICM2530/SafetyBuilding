@@ -2,6 +2,7 @@
 
 package com.safetyfirst.ui.pantallas
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,15 +11,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -27,12 +28,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -46,34 +49,59 @@ fun PantUsuariosChatLista(nav: NavController, repo: FirebaseRepositorio = Fireba
     val yo = repo.usuarioActual()?.uid.orEmpty()
     val usuariosRemotos by repo.flujoUsuarios().collectAsState(initial = emptyList())
     val autenticado = yo.isNotBlank()
+    
+    // Debug logging
+    LaunchedEffect(usuariosRemotos) {
+        Log.d("ChatDebug", "Usuarios remotos: ${usuariosRemotos.size}")
+        usuariosRemotos.forEach { Log.d("ChatDebug", "Usuario: ${it.nombre} - ${it.uid}") }
+    }
+    
     val usuarios = when {
-        usuariosRemotos.isNotEmpty() -> usuariosRemotos
-        autenticado -> emptyList() // si ya hay sesion real mostramos lista vacia en lugar del demo
+        usuariosRemotos.isNotEmpty() -> usuariosRemotos.filter { it.uid != yo }
+        autenticado -> emptyList()
         else -> MockInMemory.usuariosExcept(yo)
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Conversaciones") }) }) { p ->
-        LazyColumn(Modifier.padding(p)) {
-            if (usuarios.isEmpty()) {
-                item {
-                    ListItem(
-                        headlineContent = { Text("Aun no hay usuarios para conversar") },
-                        supportingContent = { Text("Cuando haya otros perfiles registrados aqui podras iniciar un chat.") },
-                        leadingContent = { Icon(Icons.Filled.Person, contentDescription = null) }
-                    )
-                }
-            } else {
-                items(usuarios.filter { it.uid != yo }) { u ->
-                    ListItem(
-                        headlineContent = { Text(u.nombre.ifEmpty { u.correo }) },
-                        leadingContent = { Icon(Icons.Filled.Person, contentDescription = null) },
-                        trailingContent = { Icon(Icons.Filled.ChevronRight, contentDescription = null) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                            .clickable { nav.navigate(com.safetyfirst.ui.Rutas.Chat.ruta + "/" + u.uid) }
-                    )
-                    Divider()
+    Scaffold(topBar = { TopAppBar(title = { Text("Mensajes") }) }) { p ->
+        if (autenticado && usuariosRemotos.isEmpty()) {
+            // Mostrar loading mientras se cargan los usuarios
+            Column(
+                modifier = Modifier
+                    .padding(p)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator()
+                Text(
+                    "Cargando usuarios...",
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+        } else {
+            LazyColumn(Modifier.padding(p)) {
+                if (usuarios.isEmpty()) {
+                    item {
+                        ListItem(
+                            headlineContent = { Text("Aun no hay usuarios para conversar") },
+                            supportingContent = { Text("Cuando haya otros perfiles registrados aqui podras iniciar un chat.") },
+                            leadingContent = { androidx.compose.material3.Icon(Icons.Filled.Person, contentDescription = null) }
+                        )
+                    }
+                } else {
+                    items(usuarios) { u ->
+                        ListItem(
+                            headlineContent = { Text(u.nombre.ifEmpty { u.correo }) },
+                            supportingContent = { Text(u.rol.name) },
+                            leadingContent = { androidx.compose.material3.Icon(Icons.Filled.Person, contentDescription = null) },
+                            trailingContent = { androidx.compose.material3.Icon(Icons.Filled.ChevronRight, contentDescription = null) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                                .clickable { nav.navigate(com.safetyfirst.ui.Rutas.Chat.ruta + "/" + u.uid) }
+                        )
+                        Divider()
+                    }
                 }
             }
         }
